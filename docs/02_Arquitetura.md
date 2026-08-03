@@ -82,6 +82,7 @@ Todas as rotas ficam centralizadas em **`App.tsx`** — é o primeiro arquivo a 
 | `lib/constants.ts` | Lista de módulos do menu (nome, ícone, se está em construção). |
 | `lib/format.ts` | Formatação de moeda (R$) e percentual. |
 | `lib/supabaseClient.ts` | Conexão com o banco — hoje "desligada" (sem backend ainda). |
+| `lib/tenantsAdminMock.ts` | Dados fake de **múltiplos tenants** pro Painel Administrativo RhoneyInc (seção 9) — diferente do resto de `mockData.ts`/stores, que simulam UM negócio só (o do lojista logado); aqui a visão é cross-tenant. |
 
 ---
 
@@ -130,6 +131,21 @@ Quando a troca pra Supabase real acontecer, cada `lib/*Store.ts` desta tabela vi
 
 ---
 
-## 9. Pendências e decisões registradas
+## 9. Painel Administrativo RhoneyInc (Capítulo 19 do PRD)
+
+Ferramenta interna da equipe RhoneyInc pra operar/dar suporte a **todos os tenants** da plataforma — diferente de `pages/admin/` (que é o painel de UM lojista). Rota própria (`/rhoneyinc-admin`), sessão própria em `localStorage` (`vendeflex.plataforma.sessao`), não reaproveita a sessão do painel do lojista.
+
+| Peça | Arquivo | Status | Observação |
+|---|---|---|---|
+| Login da plataforma | `pages/plataforma/LoginPlataforma.tsx` | 🎭 Só visual | Sem checagem real; qualquer submit loga. Quando o backend for ligado, vira checagem de `profiles.is_platform_admin` (função `is_platform_admin` da migration `0001_nucleo_tenants_auth.sql`) |
+| Painel (orquestrador + shell) | `pages/plataforma/PainelPlataforma.tsx` | ✅ | Decide Login → Shell; sidebar lista as 9 áreas do Cap. 19.2 |
+| Empresas | `pages/plataforma/Empresas.tsx` | ✅ Funcional (mock) | Único requisito MVP deste painel (RF-ADM-01): listagem/busca de tenants com filtro por plano e segmento, sobre `lib/tenantsAdminMock.ts` |
+| Faturamento, Planos, Usuários, Uso de IA, Consumo/Armazenamento, Tickets de Suporte, Erros, Deploys | — | 🚧 Placeholder | Roteadas em `PainelPlataforma.tsx` pra `EmConstrucaoPlataforma.tsx`; todas V2/V3 no PRD, nenhuma implementada ainda |
+
+A rota é registrada em `App.tsx` (`/rhoneyinc-admin` → `PainelPlataforma`).
+
+---
+
+## 10. Pendências e decisões registradas
 
 Ver `SETUP.md` na raiz do projeto para a lista de pendências (trigger de admin, políticas do Google Play, login real, paletas de segmento a confirmar).

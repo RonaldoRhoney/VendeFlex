@@ -4,6 +4,7 @@ import PoliticaPrivacidade from './pages/PoliticaPrivacidade'
 import TermosUso from './pages/TermosUso'
 import Contato from './pages/Contato'
 import Painel from './pages/admin/Painel'
+import PainelPlataforma from './pages/plataforma/PainelPlataforma'
 
 export default function App() {
   return (
@@ -11,6 +12,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/admin" element={<Painel />} />
+        <Route path="/rhoneyinc-admin" element={<PainelPlataforma />} />
         <Route path="/privacidade" element={<PoliticaPrivacidade />} />
         <Route path="/termos" element={<TermosUso />} />
         <Route path="/contato" element={<Contato />} />
