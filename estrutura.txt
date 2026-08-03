@@ -1,0 +1,9 @@
+/docs
+│── 01_PRD_VendeFlex.docx
+│── 02_Arquitetura.md
+│── 03_Regras_de_Negocio.md
+│── 04_Prompt_Design_Inteligente_Frontend.txt
+│── 05_Roadmap.md
+│── 06_Backend.md
+│── 07_Banco_de_Dados.md
+│── 08_IA_e_Automações.md

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" type="image/png" href="/icons/icon-192.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#B8860B" />
+    <meta name="description" content="Gestão comercial e de estoque multissegmento — VendeFlex, um produto RhoneyInc." />
+    <title>VendeFlex — Gestão comercial e de estoque</title>
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="VendeFlex" />
+    <meta property="og:description" content="Controle comercial completo — estoque, PDV, compras, financeiro e relatórios num só lugar." />
+    <meta property="og:url" content="https://vendeflex.rhoneyinc.com" />
+    <meta property="og:image" content="https://vendeflex.rhoneyinc.com/icons/icon-512.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="VendeFlex" />
+    <meta name="twitter:description" content="Controle comercial completo — estoque, PDV, compras, financeiro e relatórios num só lugar." />
+    <meta name="twitter:image" content="https://vendeflex.rhoneyinc.com/icons/icon-512.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      Só as 3 fontes "sempre usadas" (Cap. 12 do PRD) carregam aqui: Inter
+      (interface), Fraunces (telas institucionais) e JetBrains Mono (valores
+      financeiros). As fontes específicas de cada segmento (Poppins, Nunito,
+      Playfair Display etc.) são injetadas sob demanda por lib/fontLoader.ts,
+      só quando o segmento correspondente é selecionado/pré-visualizado.
+    -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // Aplica o tema salvo (ou a preferência do SO) antes do primeiro paint,
+      // pra não piscar claro→escuro (ou vice-versa) durante o carregamento.
+      (function () {
+        var salvo = localStorage.getItem('vendeflex.theme')
+        var escuro = salvo ? salvo === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
+        if (escuro) document.documentElement.classList.add('dark')
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,44 @@
+PROMPT – Design Inteligente por Segmento (UI/UX Adaptativa)
+
+Objetivo Implementar uma camada de Design Inteligente no VendeFlex,
+tornando a experiência visual dinâmica conforme o segmento do negócio.
+
+REGRAS INEGOCIÁVEIS - Não alterar regras de negócio. - Não alterar
+APIs. - Não alterar integrações. - Não alterar banco de dados. - Não
+alterar autenticação. - Não alterar permissões. - Não alterar fluxos
+existentes. - O foco desta etapa é exclusivamente o FRONTEND.
+
+Arquitetura Antes de iniciar qualquer implementação de banco de dados,
+backend ou novas tabelas, finalize toda a interface (Frontend),
+incluindo: - Design System - Componentes reutilizáveis - Layouts -
+Responsividade - Navegação - Temas - Microinterações - Dark Mode -
+Acessibilidade
+
+Design Inteligente Ao cadastrar ou alterar o segmento da empresa, o
+sistema deve sugerir automaticamente um tema visual compatível. O
+lojista poderá aceitar, personalizar ou restaurar o tema inteligente.
+
+Segmentos e estilos - Restaurante: Verde escuro, terracota, creme |
+Fonte: Poppins - Hamburgueria: Preto, amarelo, vermelho queimado | Bebas
+Neue (títulos) + Inter - Pizzaria: Vinho, verde oliva, creme |
+Montserrat - Açaiteria: Roxo, lilás, branco | Nunito - Sorveteria: Azul
+claro, rosa, branco | Quicksand - Padaria: Marrom, bege, dourado suave |
+Lora - Farmácia: Azul, branco, verde | Inter - Mercado: Azul escuro,
+laranja, branco | Roboto - Loja de roupas: Preto, branco, cinza |
+Playfair Display + Inter - Salão de beleza: Rose Gold, branco, cinza
+claro | Cormorant Garamond - Barbearia: Preto, dourado, grafite |
+Oswald - Pet Shop: Azul claro, laranja, branco | Nunito - Material de
+Construção: Azul petróleo, cinza, laranja | Roboto Condensed - Oficina:
+Grafite, vermelho, prata | Rajdhani - Papelaria: Turquesa, amarelo,
+branco | Poppins
+
+Todos os componentes (botões, cards, menus, dashboard, tabelas, inputs,
+modais, gráficos e indicadores) devem seguir o tema do segmento.
+
+Adicionar: - Microinterações elegantes - Skeleton loading - Hover, fade,
+scale e ripple - Dark Mode específico para cada segmento -
+Responsividade total (Desktop, Tablet, Mobile e PWA)
+
+Objetivo Final O usuário deve sentir que o sistema foi desenvolvido
+especificamente para seu tipo de negócio. Finalize toda a camada visual
+antes de iniciar qualquer implementação de banco de dados ou backend.
