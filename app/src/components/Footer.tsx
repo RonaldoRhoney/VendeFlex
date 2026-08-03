@@ -41,6 +41,8 @@ export default function Footer() {
             <a href="https://fitnow.rhoneyinc.com" target="_blank" rel="noopener" className="block text-sm text-white/75 hover:text-white mb-2.5 transition-colors">FitNow</a>
             <a href="#" className="block text-sm text-white/75 hover:text-white mb-2.5 transition-colors">MontaMóvel</a>
             <a href="#" className="block text-sm text-white/75 hover:text-white mb-2.5 transition-colors">AmaVida</a>
+            <a href="#" className="block text-sm text-white/75 hover:text-white mb-2.5 transition-colors">Até Passar</a>
+            <a href="#" className="block text-sm text-white/75 hover:text-white mb-2.5 transition-colors">VagaLume</a>
             <a href="https://rhoneyinc.com" target="_blank" rel="noopener" className="block text-sm text-white/75 hover:text-white mb-2.5 transition-colors">Sobre nós</a>
           </div>
 
