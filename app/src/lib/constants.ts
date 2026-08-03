@@ -12,7 +12,7 @@ export interface ModuloNav {
 export const MODULOS_NAV: ModuloNav[] = [
   { id: 'dashboard', label: 'Dashboard', icone: '📊', emConstrucao: false },
   { id: 'pdv', label: 'PDV', icone: '🧾', emConstrucao: false },
-  { id: 'vendas', label: 'Vendas', icone: '💳', emConstrucao: true },
+  { id: 'vendas', label: 'Vendas', icone: '💳', emConstrucao: false },
   { id: 'produtos', label: 'Produtos', icone: '📦', emConstrucao: false },
   { id: 'categorias', label: 'Categorias e Marcas', icone: '🏷️', emConstrucao: false },
   { id: 'fornecedores', label: 'Fornecedores', icone: '🤝', emConstrucao: false },
@@ -21,7 +21,7 @@ export const MODULOS_NAV: ModuloNav[] = [
   { id: 'caixa', label: 'Caixa', icone: '💵', emConstrucao: false },
   { id: 'financeiro', label: 'Financeiro', icone: '💰', emConstrucao: false },
   { id: 'relatorios', label: 'Relatórios', icone: '📈', emConstrucao: false },
-  { id: 'configuracoes', label: 'Configurações', icone: '⚙️', emConstrucao: true },
+  { id: 'configuracoes', label: 'Configurações', icone: '⚙️', emConstrucao: false },
 ]
 
 // Slots fixos do bottom-tab-bar mobile (Cap. 12.8 do PRD) — os módulos

@@ -14,6 +14,8 @@ import Estoque from './Estoque'
 import Caixa from './Caixa'
 import Financeiro from './Financeiro'
 import Relatorios from './Relatorios'
+import Vendas from './Vendas'
+import Configuracoes from './Configuracoes'
 import EmComConstrucao from './EmComConstrucao'
 
 const CHAVE_SESSAO = 'vendeflex.sessao'
@@ -50,6 +52,8 @@ export default function Painel() {
     if (moduloAtivo === 'caixa') return <Caixa />
     if (moduloAtivo === 'financeiro') return <Financeiro />
     if (moduloAtivo === 'relatorios') return <Relatorios />
+    if (moduloAtivo === 'vendas') return <Vendas />
+    if (moduloAtivo === 'configuracoes') return <Configuracoes temaSegmento={temaSegmento} />
     const modulo = MODULOS_NAV.find((m) => m.id === moduloAtivo)
     return <EmComConstrucao modulo={modulo?.label ?? moduloAtivo} />
   }

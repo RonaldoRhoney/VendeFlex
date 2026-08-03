@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import { PRODUTOS_MOCK } from '../../lib/mockData'
 import { formatarReais } from '../../lib/format'
-import type { ItemCarrinho, Produto } from '../../lib/types'
+import { registrarVenda } from '../../lib/vendasStore'
+import type { FormaPagamento, ItemCarrinho, Produto } from '../../lib/types'
+import Toast, { type ToastData } from '../../components/admin/Toast'
+
+const FORMAS: { value: FormaPagamento; label: string }[] = [
+  { value: 'dinheiro', label: 'Dinheiro' },
+  { value: 'cartao', label: 'Cartão' },
+  { value: 'pix', label: 'PIX' },
+]
 
 // PDV / Vendas (Capítulo 7.7 do PRD) — mobile-first, já que é o fluxo mais
 // usado no balcão de venda (Cap. 12.11). Busca por texto nesta fase; o
@@ -11,6 +19,8 @@ import type { ItemCarrinho, Produto } from '../../lib/types'
 export default function PDV() {
   const [busca, setBusca] = useState('')
   const [carrinho, setCarrinho] = useState<ItemCarrinho[]>([])
+  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>('dinheiro')
+  const [toast, setToast] = useState<ToastData | null>(null)
 
   const resultados = busca.trim()
     ? PRODUTOS_MOCK.filter(
@@ -37,6 +47,12 @@ export default function PDV() {
   }
 
   const total = carrinho.reduce((soma, i) => soma + i.produto.precoVenda * i.quantidade, 0)
+
+  function finalizarVenda() {
+    registrarVenda(carrinho, total, formaPagamento)
+    setCarrinho([])
+    setToast({ mensagem: `Venda de ${formatarReais(total)} registrada.`, tipo: 'sucesso' })
+  }
 
   return (
     <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 max-w-5xl">
@@ -104,19 +120,35 @@ export default function PDV() {
               ))}
             </div>
           )}
+          <div className="flex gap-1.5 mb-3">
+            {FORMAS.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setFormaPagamento(f.value)}
+                className={`flex-1 text-xs rounded-lg border py-1.5 transition-colors ${
+                  formaPagamento === f.value
+                    ? 'bg-seg-primary text-white border-seg-primary'
+                    : 'border-black/15 dark:border-white/15 text-black/60 dark:text-white/60'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
           <div className="flex items-center justify-between border-t border-black/10 dark:border-white/10 pt-3 mb-3">
             <span className="text-sm text-black/50 dark:text-white/50">Total</span>
             <span className="font-semibold font-[var(--font-mono-fin)]">{formatarReais(total)}</span>
           </div>
           <button
             disabled={carrinho.length === 0}
-            onClick={() => setCarrinho([])}
+            onClick={finalizarVenda}
             className="w-full rounded-lg bg-seg-primary text-white py-3 text-sm font-medium transition-transform active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
           >
             Finalizar Venda
           </button>
         </div>
       </div>
+      <Toast toast={toast} onClose={() => setToast(null)} />
     </div>
   )
 }

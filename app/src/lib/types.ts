@@ -19,6 +19,18 @@ export interface ItemCarrinho {
   quantidade: number
 }
 
+// ---------- Vendas / PDV (Cap. 7.7) ----------
+export type FormaPagamento = 'dinheiro' | 'cartao' | 'pix'
+
+export interface VendaRegistrada {
+  id: string
+  itens: ItemCarrinho[]
+  total: number
+  formaPagamento: FormaPagamento
+  vendedor: string
+  criadoEm: string
+}
+
 export interface IndicadorPeriodo {
   faturamento: number
   lucro: number

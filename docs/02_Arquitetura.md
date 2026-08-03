@@ -37,11 +37,13 @@ Ordem de construção segue a cadeia de dependência do Capítulo 4.4 do PRD (Pr
 | **Caixa** | ✅ Funcional (mock) | `pages/admin/Caixa.tsx` | Abertura/sangria/suprimento/fechamento (em memória) |
 | **Financeiro** | ✅ Funcional (mock) | `pages/admin/Financeiro.tsx` | DRE simplificado por período |
 | **Relatórios** | ✅ Funcional (mock) | `pages/admin/Relatorios.tsx` | Vendas por produto + giro de estoque por categoria |
-| **Vendas (histórico completo)** | 🚧 Placeholder | `pages/admin/EmComConstrucao.tsx` | PDV já vende; falta tela de histórico dedicada |
-| **Configurações** | 🚧 Placeholder | `pages/admin/EmComConstrucao.tsx` | Inclui dados do tenant, usuários e papéis |
+| **Vendas (histórico completo)** | ✅ Funcional (mock) | `pages/admin/Vendas.tsx` | Lista o que o PDV registrou via `lib/vendasStore.ts` |
+| **Configurações** | ✅ Funcional (mock) | `pages/admin/Configuracoes.tsx` | Dados do negócio, segmento atual (+ trocar), usuários/papéis |
 | **Login** | 🎭 Só visual | `pages/admin/Login.tsx` | Sem Supabase Auth real ainda |
 | **Painel (orquestrador)** | ✅ | `pages/admin/Painel.tsx` | Decide Login → Onboarding → Shell |
 | **Casca do painel (menu/nav)** | ✅ | `pages/admin/AdminShell.tsx` | Sidebar desktop + tab-bar mobile |
+
+Todos os módulos do MVP do Capítulo 4 do PRD já têm tela funcional (mock). O que falta pra virar produto de verdade é só a camada de backend (autenticação real + schema Supabase) — ver `SETUP.md`.
 
 Pra adicionar uma tela nova a um módulo hoje "em construção": crie o arquivo em `pages/admin/`, e troque a linha correspondente em `Painel.tsx` (função `renderModulo()`) pra apontar pro componente novo em vez de `EmComConstrucao`.
 
@@ -68,6 +70,7 @@ Todas as rotas ficam centralizadas em **`App.tsx`** — é o primeiro arquivo a 
 | `lib/useSegmentTheme.ts` | Hook que aplica o tema na tela (preview) e salva a escolha (confirmar). |
 | `lib/fontLoader.ts` | Carrega a fonte do segmento sob demanda (só quando precisa). |
 | `lib/mockData.ts` | Todos os dados fake usados em toda tela do painel (Produtos, Categorias, Fornecedores, Compras, Estoque, Caixa, Financeiro, Relatórios). **É aqui que entra o backend de verdade no futuro.** |
+| `lib/vendasStore.ts` | Registro/histórico de vendas — a única "persistência" real hoje (localStorage), permite o PDV e a tela de Vendas se comunicarem de verdade. |
 | `lib/types.ts` | Formato dos dados (Produto, indicadores, etc.) — TypeScript, não é banco. |
 | `lib/constants.ts` | Lista de módulos do menu (nome, ícone, se está em construção). |
 | `lib/format.ts` | Formatação de moeda (R$) e percentual. |
