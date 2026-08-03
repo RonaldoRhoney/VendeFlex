@@ -111,6 +111,25 @@ Todas as rotas ficam centralizadas em **`App.tsx`** — é o primeiro arquivo a 
 
 ---
 
-## 7. Pendências e decisões registradas
+## 8. Backend (Supabase) — schema pronto, frontend ainda não fala com ele
+
+`supabase/migrations/` (raiz do repo, fora de `app/src/`) tem o schema completo desenhado pro Cap. 11 do PRD. **Nada disso está ligado ao frontend ainda**: `lib/*Store.ts` continuam 100% `localStorage` (via `lib/localStore.ts`), e `lib/supabaseClient.ts` mantém `DB_READY = false` (sem envs configuradas). Trocar o backend real é uma fase seguinte, ainda não feita.
+
+| Migration | Tabelas/objetos | O que resolve |
+|---|---|---|
+| `0001_nucleo_tenants_auth.sql` | `tenants`, `usuarios_tenant`, `configuracoes_tenant`, `profiles` + funções `is_platform_admin`/`is_tenant_member`/`is_tenant_owner`/`is_tenant_role_in` + triggers `handle_new_user`/`handle_new_tenant`/`set_atualizado_em` | Multi-tenant e os 4 papéis do Cap. 15.7 (dono/financeiro/estoquista/vendedor) passam a valer de verdade via RLS — primeira vez que papel tem efeito real (frontend hoje só mostra "Você = Dono" sem checagem). `handle_new_user` promove `rhoneyinc@gmail.com` a admin de plataforma automaticamente (skill `admin-padrao`). |
+| `0002_produtos_categorias_marcas.sql` | `categorias`, `marcas`, `produtos` (estoque_atual/estoque_minimo direto na tabela, sem filial separada — V2), view `vw_produtos_venda` | Mapeia 1:1 o que `lib/produtosStore.ts`/`categoriasStore.ts` já fazem em localStorage. View sem `preco_custo` é o mecanismo de esconder custo do papel vendedor (RLS é por linha, não por coluna). |
+| `0003_estoque_movimentos.sql` | `estoque_movimentos` + RPC `registrar_movimento_estoque` (único ponto de entrada pra mudar `estoque_atual`) e `ajustar_estoque_manual` (restrito a dono/estoquista) | Espelha `lib/estoqueStore.ts`: delta assinado, nunca deixa saldo negativo. Nenhuma outra função faz update direto na coluna de estoque. |
+| `0004_fornecedores_compras.sql` | `fornecedores`, `compras`, `compra_itens` + RPC `avancar_status_compra` | Máquina de estados pendente→parcial→recebido de `lib/comprasStore.ts`; ao chegar em "recebido" gera entrada real de estoque via `registrar_movimento_estoque` (0003), nunca update direto. |
+| `0005_vendas_caixa.sql` | `vendas`, `venda_itens`, `caixa_turnos`, `caixa_movimentos` + RPC `registrar_venda`, `cancelar_venda` (restrito a dono/financeiro), `fechar_turno_caixa` | `registrar_venda` nunca confia em preço vindo do client (sempre lê `produtos.preco_venda` no servidor) e decrementa estoque real. `cancelar_venda` nunca apaga, só marca `cancelada` + estorna. `fechar_turno_caixa` concilia vendas em dinheiro do turno vs. valor informado (mesma lógica de `Caixa.tsx`). |
+| `0006_auditoria.sql` | `auditoria_logs` (imutável, sem IP) + trigger genérica em produtos/estoque_movimentos/vendas/compras | Log de UPDATE/DELETE nessas 4 tabelas; só leitura pra dono do tenant ou admin de plataforma, ninguém escreve direto (só a trigger, security definer). |
+
+Padrões recorrentes across as 6 migrations: RLS habilitado desde a criação em toda tabela (nunca depois), mutações sensíveis só via RPC `security definer` (nunca policy de insert/update direta pra tabelas como `estoque_movimentos`/`vendas`/`auditoria_logs`), e todo delta de estoque passa por `registrar_movimento_estoque` — mesmos padrões já validados em produção no MenuFlex e no RhoneyInc hub.
+
+Quando a troca pra Supabase real acontecer, cada `lib/*Store.ts` desta tabela vira candidato a apontar pra uma tabela/RPC acima em vez de `localStorage` — ver `SETUP.md`.
+
+---
+
+## 9. Pendências e decisões registradas
 
 Ver `SETUP.md` na raiz do projeto para a lista de pendências (trigger de admin, políticas do Google Play, login real, paletas de segmento a confirmar).
