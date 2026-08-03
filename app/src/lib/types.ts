@@ -35,3 +35,71 @@ export interface RankingProduto {
 }
 
 export type PeriodoDashboard = 'hoje' | 'ontem' | 'semana' | 'mes' | 'ano'
+
+// ---------- Categorias e Marcas (Cap. 7.3) ----------
+export interface Categoria {
+  id: string
+  nome: string
+  categoriaPaiId: string | null
+}
+
+export interface Marca {
+  id: string
+  nome: string
+}
+
+// ---------- Fornecedores (Cap. 7.4) ----------
+export interface Fornecedor {
+  id: string
+  nome: string
+  contato: string
+  condicoesPagamento: string
+}
+
+// ---------- Compras (Cap. 7.5) ----------
+export type StatusCompra = 'pendente' | 'parcial' | 'recebido'
+
+export interface ItemCompra {
+  produto: Produto
+  quantidade: number
+  precoUnitario: number
+}
+
+export interface Compra {
+  id: string
+  fornecedor: Fornecedor
+  status: StatusCompra
+  dataPedido: string
+  itens: ItemCompra[]
+}
+
+// ---------- Estoque — movimentos (Cap. 7.6) ----------
+export type TipoMovimentoEstoque = 'entrada' | 'saida' | 'perda' | 'ajuste'
+
+export interface MovimentoEstoque {
+  id: string
+  produto: Produto
+  tipo: TipoMovimentoEstoque
+  quantidade: number
+  motivo: string
+  data: string
+}
+
+// ---------- Caixa (Cap. 7.8) ----------
+export type StatusCaixa = 'aberto' | 'fechado'
+
+export interface TurnoCaixa {
+  id: string
+  operador: string
+  valorAbertura: number
+  valorFechamento: number | null
+  status: StatusCaixa
+  abertoEm: string
+}
+
+// ---------- Financeiro (Cap. 7.9) ----------
+export interface LinhaDRE {
+  label: string
+  valor: number
+  destaque?: boolean
+}

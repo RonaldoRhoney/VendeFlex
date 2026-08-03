@@ -22,19 +22,23 @@ Regra simples pra achar qualquer coisa: **"é uma tela?" → `pages/`. "é lógi
 
 ## 2. Módulos do painel (Capítulo 4 do PRD) — status e localização
 
+Ordem de construção segue a cadeia de dependência do Capítulo 4.4 do PRD (Produtos/Categorias antes de Compras/PDV; Compras/Fornecedores antes de Estoque; PDV antes de Caixa; Vendas/Compras antes de Financeiro/Relatórios).
+
 | Módulo | Status nesta fase | Arquivo da tela | Observação |
 |---|---|---|---|
 | **Onboarding / Design Inteligente** | ✅ Funcional (mock) | `pages/admin/Onboarding.tsx` | Seletor de segmento com troca de tema ao vivo |
 | **Dashboard** | ✅ Funcional (mock) | `pages/admin/Dashboard.tsx` | Indicadores + ranking, dados fake de `lib/mockData.ts` |
 | **PDV / Vendas** | ✅ Funcional (mock) | `pages/admin/PDV.tsx` | Busca + carrinho; sem leitor de câmera ainda |
 | **Produtos** | ✅ Funcional (mock) | `pages/admin/Produtos.tsx` | Tabela com paginação |
-| **Vendas (histórico)** | 🚧 Placeholder | `pages/admin/EmComConstrucao.tsx` | Roteado, sem tela própria ainda |
-| **Estoque** | 🚧 Placeholder | `pages/admin/EmComConstrucao.tsx` | idem |
-| **Compras** | 🚧 Placeholder | `pages/admin/EmComConstrucao.tsx` | idem |
-| **Fornecedores** | 🚧 Placeholder | `pages/admin/EmComConstrucao.tsx` | idem |
-| **Financeiro** | 🚧 Placeholder | `pages/admin/EmComConstrucao.tsx` | idem |
-| **Relatórios** | 🚧 Placeholder | `pages/admin/EmComConstrucao.tsx` | idem |
-| **Configurações** | 🚧 Placeholder | `pages/admin/EmComConstrucao.tsx` | idem |
+| **Categorias e Marcas** | ✅ Funcional (mock) | `pages/admin/Categorias.tsx` | Árvore de categorias + chips de marca |
+| **Fornecedores** | ✅ Funcional (mock) | `pages/admin/Fornecedores.tsx` | Cadastro + histórico de compras por fornecedor |
+| **Compras** | ✅ Funcional (mock) | `pages/admin/Compras.tsx` | Pedidos com status (pendente/parcial/recebido) |
+| **Estoque** | ✅ Funcional (mock) | `pages/admin/Estoque.tsx` | Alerta de mínimo + log de movimentos |
+| **Caixa** | ✅ Funcional (mock) | `pages/admin/Caixa.tsx` | Abertura/sangria/suprimento/fechamento (em memória) |
+| **Financeiro** | ✅ Funcional (mock) | `pages/admin/Financeiro.tsx` | DRE simplificado por período |
+| **Relatórios** | ✅ Funcional (mock) | `pages/admin/Relatorios.tsx` | Vendas por produto + giro de estoque por categoria |
+| **Vendas (histórico completo)** | 🚧 Placeholder | `pages/admin/EmComConstrucao.tsx` | PDV já vende; falta tela de histórico dedicada |
+| **Configurações** | 🚧 Placeholder | `pages/admin/EmComConstrucao.tsx` | Inclui dados do tenant, usuários e papéis |
 | **Login** | 🎭 Só visual | `pages/admin/Login.tsx` | Sem Supabase Auth real ainda |
 | **Painel (orquestrador)** | ✅ | `pages/admin/Painel.tsx` | Decide Login → Onboarding → Shell |
 | **Casca do painel (menu/nav)** | ✅ | `pages/admin/AdminShell.tsx` | Sidebar desktop + tab-bar mobile |
@@ -63,7 +67,7 @@ Todas as rotas ficam centralizadas em **`App.tsx`** — é o primeiro arquivo a 
 | `lib/segmentThemes.ts` | Mapa segmento → tema (cor + fonte). Coração do "Design Inteligente". |
 | `lib/useSegmentTheme.ts` | Hook que aplica o tema na tela (preview) e salva a escolha (confirmar). |
 | `lib/fontLoader.ts` | Carrega a fonte do segmento sob demanda (só quando precisa). |
-| `lib/mockData.ts` | Todos os dados fake usados em Dashboard/PDV/Produtos. **É aqui que entra o backend de verdade no futuro.** |
+| `lib/mockData.ts` | Todos os dados fake usados em toda tela do painel (Produtos, Categorias, Fornecedores, Compras, Estoque, Caixa, Financeiro, Relatórios). **É aqui que entra o backend de verdade no futuro.** |
 | `lib/types.ts` | Formato dos dados (Produto, indicadores, etc.) — TypeScript, não é banco. |
 | `lib/constants.ts` | Lista de módulos do menu (nome, ícone, se está em construção). |
 | `lib/format.ts` | Formatação de moeda (R$) e percentual. |

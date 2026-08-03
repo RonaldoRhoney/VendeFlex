@@ -7,6 +7,13 @@ import AdminShell from './AdminShell'
 import Dashboard from './Dashboard'
 import PDV from './PDV'
 import Produtos from './Produtos'
+import Categorias from './Categorias'
+import Fornecedores from './Fornecedores'
+import Compras from './Compras'
+import Estoque from './Estoque'
+import Caixa from './Caixa'
+import Financeiro from './Financeiro'
+import Relatorios from './Relatorios'
 import EmComConstrucao from './EmComConstrucao'
 
 const CHAVE_SESSAO = 'vendeflex.sessao'
@@ -36,6 +43,13 @@ export default function Painel() {
     if (moduloAtivo === 'dashboard') return <Dashboard />
     if (moduloAtivo === 'pdv') return <PDV />
     if (moduloAtivo === 'produtos') return <Produtos />
+    if (moduloAtivo === 'categorias') return <Categorias />
+    if (moduloAtivo === 'fornecedores') return <Fornecedores />
+    if (moduloAtivo === 'compras') return <Compras />
+    if (moduloAtivo === 'estoque') return <Estoque />
+    if (moduloAtivo === 'caixa') return <Caixa />
+    if (moduloAtivo === 'financeiro') return <Financeiro />
+    if (moduloAtivo === 'relatorios') return <Relatorios />
     const modulo = MODULOS_NAV.find((m) => m.id === moduloAtivo)
     return <EmComConstrucao modulo={modulo?.label ?? moduloAtivo} />
   }
