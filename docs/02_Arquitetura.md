@@ -27,17 +27,17 @@ Ordem de construção segue a cadeia de dependência do Capítulo 4.4 do PRD (Pr
 | Módulo | Status nesta fase | Arquivo da tela | Observação |
 |---|---|---|---|
 | **Onboarding / Design Inteligente** | ✅ Funcional (mock) | `pages/admin/Onboarding.tsx` | Seletor de segmento com troca de tema ao vivo |
-| **Dashboard** | ✅ Funcional (mock) | `pages/admin/Dashboard.tsx` | Indicadores + ranking, dados fake de `lib/mockData.ts` |
-| **PDV / Vendas** | ✅ Funcional (mock) | `pages/admin/PDV.tsx` | Busca + carrinho; sem leitor de câmera ainda |
-| **Produtos** | ✅ Funcional (mock) | `pages/admin/Produtos.tsx` | Tabela com paginação |
-| **Categorias e Marcas** | ✅ Funcional (mock) | `pages/admin/Categorias.tsx` | Árvore de categorias + chips de marca |
-| **Fornecedores** | ✅ Funcional (mock) | `pages/admin/Fornecedores.tsx` | Cadastro + histórico de compras por fornecedor |
-| **Compras** | ✅ Funcional (mock) | `pages/admin/Compras.tsx` | Pedidos com status (pendente/parcial/recebido) |
-| **Estoque** | ✅ Funcional (mock) | `pages/admin/Estoque.tsx` | Alerta de mínimo + log de movimentos |
-| **Caixa** | ✅ Funcional (mock) | `pages/admin/Caixa.tsx` | Abertura/sangria/suprimento/fechamento (em memória) |
-| **Financeiro** | ✅ Funcional (mock) | `pages/admin/Financeiro.tsx` | DRE simplificado por período |
-| **Relatórios** | ✅ Funcional (mock) | `pages/admin/Relatorios.tsx` | Vendas por produto + giro de estoque por categoria |
-| **Vendas (histórico completo)** | ✅ Funcional (mock) | `pages/admin/Vendas.tsx` | Lista o que o PDV registrou via `lib/vendasStore.ts` |
+| **Dashboard** | ✅ Funcional (mock) | `pages/admin/Dashboard.tsx` | Indicadores + ranking calculados de verdade por `lib/analytics.ts` a partir de `useVendas()` (antes eram fórmulas fixas) |
+| **PDV / Vendas** | ✅ Funcional (mock) | `pages/admin/PDV.tsx` | Busca + carrinho; decrementa estoque real via `lib/estoqueStore.ts` na venda; desconto por venda sem limite por papel (sem sistema de permissão ainda); sem leitor de câmera ainda |
+| **Produtos** | ✅ Funcional (mock) | `pages/admin/Produtos.tsx` | CRUD real (criar/editar/excluir) via `lib/produtosStore.ts`, antes era só tabela de leitura |
+| **Categorias e Marcas** | ✅ Funcional (mock) | `pages/admin/Categorias.tsx` | Criar categoria/subcategoria/marca via `lib/categoriasStore.ts`, antes era só leitura |
+| **Fornecedores** | ✅ Funcional (mock) | `pages/admin/Fornecedores.tsx` | Criar fornecedor via `lib/fornecedoresStore.ts` + histórico de compras, antes era só leitura |
+| **Compras** | ✅ Funcional (mock) | `pages/admin/Compras.tsx` | Criar pedido + avançar status via `lib/comprasStore.ts`; ao chegar em "recebido" gera entrada real de estoque, antes era só leitura |
+| **Estoque** | ✅ Funcional (mock) | `pages/admin/Estoque.tsx` | Alerta de mínimo + log de movimentos real via `useMovimentosEstoque` (`lib/estoqueStore.ts`), antes lia array fixo direto |
+| **Caixa** | ✅ Funcional (mock) | `pages/admin/Caixa.tsx` | Abertura/sangria/suprimento/fechamento com conciliação real (soma vendas em dinheiro do turno via `useVendas()` vs. valor informado, mostra sobra/falta) |
+| **Financeiro** | ✅ Funcional (mock) | `pages/admin/Financeiro.tsx` | DRE calculado de verdade por `lib/analytics.ts` a partir de `useVendas()`, antes era fixo |
+| **Relatórios** | ✅ Funcional (mock) | `pages/admin/Relatorios.tsx` | Vendas por produto + giro de estoque via `lib/analytics.ts`/`useVendas()`, antes era fixo |
+| **Vendas (histórico completo)** | ✅ Funcional (mock) | `pages/admin/Vendas.tsx` | Lista vendas de `lib/vendasStore.ts`; cancelamento com estorno automático de estoque (venda cancelada continua no histórico, `cancelada: true`) |
 | **Configurações** | ✅ Funcional (mock) | `pages/admin/Configuracoes.tsx` | Dados do negócio, segmento atual (+ trocar), usuários/papéis |
 | **Login** | 🎭 Só visual | `pages/admin/Login.tsx` | Sem Supabase Auth real ainda |
 | **Painel (orquestrador)** | ✅ | `pages/admin/Painel.tsx` | Decide Login → Onboarding → Shell |
@@ -69,8 +69,15 @@ Todas as rotas ficam centralizadas em **`App.tsx`** — é o primeiro arquivo a 
 | `lib/segmentThemes.ts` | Mapa segmento → tema (cor + fonte). Coração do "Design Inteligente". |
 | `lib/useSegmentTheme.ts` | Hook que aplica o tema na tela (preview) e salva a escolha (confirmar). |
 | `lib/fontLoader.ts` | Carrega a fonte do segmento sob demanda (só quando precisa). |
-| `lib/mockData.ts` | Todos os dados fake usados em toda tela do painel (Produtos, Categorias, Fornecedores, Compras, Estoque, Caixa, Financeiro, Relatórios). **É aqui que entra o backend de verdade no futuro.** |
-| `lib/vendasStore.ts` | Registro/histórico de vendas — a única "persistência" real hoje (localStorage), permite o PDV e a tela de Vendas se comunicarem de verdade. |
+| `lib/localStore.ts` | Fábrica genérica (`createLocalStore<T>(chave, seed)`) de "banco local" via `localStorage` — ler/salvar/hook de sincronização entre abas/telas, reaproveitada por todos os stores abaixo (padrão nasceu em `vendasStore.ts`). |
+| `lib/produtosStore.ts` | CRUD real de produtos (criar/editar/excluir) sobre `localStorage`, seed vindo de `mockData.ts`. |
+| `lib/categoriasStore.ts` | CRUD de categorias/subcategorias/marcas. |
+| `lib/fornecedoresStore.ts` | Cadastro de fornecedores. |
+| `lib/comprasStore.ts` | Pedidos de compra: criar + avançar status; ao chegar em "recebido" chama `estoqueStore.ts` pra gerar entrada real. |
+| `lib/estoqueStore.ts` | Log de movimentos de estoque (`registrarMovimentoEstoque`) — único ponto de entrada pra mudar saldo de um produto, usado por PDV (venda), Compras (recebimento) e Vendas (estorno de cancelamento). |
+| `lib/vendasStore.ts` | Registro/histórico de vendas — primeira "persistência" real (localStorage), inspirou o padrão de `localStore.ts`. |
+| `lib/analytics.ts` | `calcularIndicadores`/`calcularRanking`/`calcularDRE` — calculam Dashboard/Financeiro/Relatórios de verdade a partir de vendas reais (`vendasStore.ts`), substituindo as fórmulas fixas que existiam em `mockData.ts`. |
+| `lib/mockData.ts` | Só dados-SEMENTE usados na primeira leitura de cada store acima — nunca deve ser importado direto por uma tela; edição do usuário nunca refletiria (releria sempre o array estático). |
 | `lib/types.ts` | Formato dos dados (Produto, indicadores, etc.) — TypeScript, não é banco. |
 | `lib/constants.ts` | Lista de módulos do menu (nome, ícone, se está em construção). |
 | `lib/format.ts` | Formatação de moeda (R$) e percentual. |

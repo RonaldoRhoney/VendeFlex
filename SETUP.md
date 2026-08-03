@@ -11,7 +11,8 @@ Scaffold inicial do frontend (só interface, dados mockados, zero backend/Supaba
 - **Login real**: `Login.tsx` hoje é só visual; substituir por Supabase Auth compartilhado (SSO RhoneyInc) quando o backend existir.
 - **Segmentos MVP sem paleta confirmada**: 4 dos 8 segmentos MVP (Autopeças, Cosméticos, Mercadinho, Açougue) têm paleta extrapolada por analogia em `app/src/lib/segmentThemes.ts` (`extrapolated: true`) — confirmar com design antes de considerar final.
 - **Regra dos 75% do Onboarding** (Cap. 6.2 do PRD): ainda não implementada — o `Onboarding.tsx` atual só escolhe segmento/tema, não tem a barra de progresso por campo obrigatório nem os demais passos (filial, usuários, estoque inicial, caixa, tour guiado).
-- **Vendas/Caixa/Configurações usam `localStorage`, não banco**: `lib/vendasStore.ts` e os dados do negócio em `Configuracoes.tsx` são a única "persistência" hoje — candidatos diretos a virar tabela real (`vendas`, `businesses`/`tenants`) quando o schema for desenhado.
+- **Desconto do PDV sem limite por papel**: `PDV.tsx` (RF-PDV-03) aplica desconto por venda sem checar permissão de quem está logado — decisão adiada explicitamente por não existir ainda sistema de papéis/permissão; revisar quando `Configuracoes.tsx` (usuários/papéis) virar backend real.
+- **Todos os cadastros/movimentos usam `localStorage`, não banco**: `lib/localStore.ts` (fábrica genérica) e os stores que a usam (`produtosStore.ts`, `categoriasStore.ts`, `fornecedoresStore.ts`, `comprasStore.ts`, `estoqueStore.ts`, `vendasStore.ts`) + dados do negócio em `Configuracoes.tsx` são a única "persistência" hoje — candidatos diretos a virar tabela real (`produtos`, `categorias`, `fornecedores`, `compras`, `movimentos_estoque`, `vendas`, `businesses`/`tenants`) quando o schema for desenhado.
 
 ## Agentes de suporte ao projeto
 
