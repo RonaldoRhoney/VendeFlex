@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useSegmentTheme } from '../../lib/useSegmentTheme'
-import { MODULOS_NAV } from '../../lib/constants'
+import { CHAVE_SESSAO, MODULOS_NAV } from '../../lib/constants'
 import Login from './Login'
 import Onboarding from './Onboarding'
 import AdminShell from './AdminShell'
@@ -17,8 +17,6 @@ import Relatorios from './Relatorios'
 import Vendas from './Vendas'
 import Configuracoes from './Configuracoes'
 import EmComConstrucao from './EmComConstrucao'
-
-const CHAVE_SESSAO = 'vendeflex.sessao'
 
 // Decide Login vs Onboarding vs shell autenticado — sem Supabase Auth real
 // ainda (ver nota em Login.tsx). "Sessão" e "segmento confirmado" são só

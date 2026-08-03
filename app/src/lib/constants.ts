@@ -27,3 +27,8 @@ export const MODULOS_NAV: ModuloNav[] = [
 // Slots fixos do bottom-tab-bar mobile (Cap. 12.8 do PRD) — os módulos
 // restantes ficam atrás de "Mais".
 export const MODULOS_TAB_BAR_MOBILE = ['pdv', 'estoque', 'vendas'] as const
+
+// Chave única de localStorage pra sessão fake (Painel.tsx grava/lê,
+// AdminShell.tsx remove ao sair) — string compartilhada, nunca duplicada
+// como literal solto em mais de um arquivo.
+export const CHAVE_SESSAO = 'vendeflex.sessao'

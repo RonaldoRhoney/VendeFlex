@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import Breadcrumb from '../../components/Breadcrumb'
 import ThemeToggle from '../../components/ThemeToggle'
-import { MODULOS_NAV, MODULOS_TAB_BAR_MOBILE } from '../../lib/constants'
+import { CHAVE_SESSAO, MODULOS_NAV, MODULOS_TAB_BAR_MOBILE } from '../../lib/constants'
 
 interface AdminShellProps {
   moduloAtivo: string
@@ -16,12 +16,14 @@ interface AdminShellProps {
 // sem hierarquia. O Cap. 12.8 do PRD pede essa priorização explícita porque
 // PDV é o fluxo mais frequente no balcão de venda.
 export default function AdminShell({ moduloAtivo, onSelectModulo, children }: AdminShellProps) {
-  const navigate = useNavigate()
   const [maisAberto, setMaisAberto] = useState(false)
 
   function sair() {
-    localStorage.removeItem('vendeflex.sessao')
-    navigate('/admin')
+    localStorage.removeItem(CHAVE_SESSAO)
+    // navigate('/admin') não remontaria Painel.tsx (mesma rota já ativa) —
+    // o estado `logado` em memória continuaria true mesmo com a chave já
+    // removida do localStorage. Reload força Painel a reler do zero.
+    window.location.href = '/admin'
   }
 
   const moduloAtual = MODULOS_NAV.find((m) => m.id === moduloAtivo)
