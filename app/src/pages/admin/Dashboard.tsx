@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { calcularIndicadores, calcularRanking } from '../../lib/analytics'
+import { calcularIndicadores, calcularRanking, calcularRankingLucratividade, produtosSemVenda, vendasNoPeriodo } from '../../lib/analytics'
 import { useVendas } from '../../lib/vendasStore'
 import { useProdutos } from '../../lib/produtosStore'
 import { formatarPercentual, formatarReais } from '../../lib/format'
@@ -36,8 +36,11 @@ export default function Dashboard() {
   const [periodo, setPeriodo] = useState<PeriodoDashboard>('hoje')
   const vendas = useVendas().filter((v) => !v.cancelada)
   const produtos = useProdutos()
+  const vendasDoPeriodo = vendasNoPeriodo(vendas, periodo)
   const indicadores = calcularIndicadores(vendas, periodo)
-  const ranking = calcularRanking(vendas)
+  const ranking = calcularRanking(vendasDoPeriodo)
+  const rankingLucratividade = calcularRankingLucratividade(vendasDoPeriodo)
+  const semVenda = produtosSemVenda(produtos, vendasDoPeriodo)
   const estoqueBaixo = produtos.filter((p) => p.estoqueAtual <= p.estoqueMinimo)
 
   return (
@@ -81,29 +84,70 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div>
-        <h3 className="text-sm font-medium mb-3">Produtos mais vendidos</h3>
-        {ranking.length === 0 ? (
-          <EmptyState title="Nenhuma venda ainda" description="Finalize uma venda no PDV pra ver o ranking aqui." />
-        ) : (
-          <div className="space-y-2">
-            {ranking.map((r) => (
-              <div
-                key={r.produto.id}
-                className="flex items-center justify-between rounded-lg border border-black/10 dark:border-white/10 px-3 py-2.5"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">{r.produto.nome}</p>
-                  <p className="text-xs text-black/40 dark:text-white/40">{r.quantidadeVendida} unidades vendidas</p>
+      <div className="grid sm:grid-cols-2 gap-6">
+        <div>
+          <h3 className="text-sm font-medium mb-3">Produtos mais vendidos</h3>
+          {ranking.length === 0 ? (
+            <EmptyState title="Nenhuma venda ainda" description="Finalize uma venda no PDV pra ver o ranking aqui." />
+          ) : (
+            <div className="space-y-2">
+              {ranking.map((r) => (
+                <div
+                  key={r.produto.id}
+                  className="flex items-center justify-between rounded-lg border border-black/10 dark:border-white/10 px-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{r.produto.nome}</p>
+                    <p className="text-xs text-black/40 dark:text-white/40">{r.quantidadeVendida} unidades vendidas</p>
+                  </div>
+                  <p className="text-sm font-medium font-[var(--font-mono-fin)] tabular-nums shrink-0">
+                    {formatarReais(r.lucroGerado)}
+                  </p>
                 </div>
-                <p className="text-sm font-medium font-[var(--font-mono-fin)] tabular-nums shrink-0">
-                  {formatarReais(r.lucroGerado)}
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <h3 className="text-sm font-medium mb-3">Produtos mais lucrativos</h3>
+          {rankingLucratividade.length === 0 ? (
+            <EmptyState title="Nenhuma venda ainda" description="Finalize uma venda no PDV pra ver o ranking aqui." />
+          ) : (
+            <div className="space-y-2">
+              {rankingLucratividade.map((r) => (
+                <div
+                  key={r.produto.id}
+                  className="flex items-center justify-between rounded-lg border border-black/10 dark:border-white/10 px-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{r.produto.nome}</p>
+                    <p className="text-xs text-black/40 dark:text-white/40">{r.quantidadeVendida} unidades vendidas</p>
+                  </div>
+                  <p className="text-sm font-medium font-[var(--font-mono-fin)] tabular-nums shrink-0 text-success">
+                    {formatarReais(r.lucroGerado)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      {semVenda.length > 0 && (
+        <div>
+          <h3 className="text-sm font-medium mb-3">Sem venda no período</h3>
+          <div className="rounded-xl border border-black/10 dark:border-white/10 p-4">
+            <p className="text-xs text-black/50 dark:text-white/50">
+              {semVenda
+                .slice(0, 8)
+                .map((p) => p.nome)
+                .join(', ')}
+              {semVenda.length > 8 && ` e mais ${semVenda.length - 8}`}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

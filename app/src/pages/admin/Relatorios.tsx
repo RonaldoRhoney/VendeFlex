@@ -1,15 +1,30 @@
-import { calcularRanking } from '../../lib/analytics'
+import { useState } from 'react'
+import { calcularRanking, vendasNoPeriodo } from '../../lib/analytics'
 import { useVendas } from '../../lib/vendasStore'
 import { useProdutos } from '../../lib/produtosStore'
 import { formatarReais } from '../../lib/format'
 import EmptyState from '../../components/EmptyState'
+import type { PeriodoDashboard } from '../../lib/types'
 
-// Relatórios (Capítulo 7.12 do PRD) — vendas por produto (RF-REL-01) e giro
-// de estoque por categoria (RF-REL-02), agora a partir de vendas reais.
+const PERIODOS: { value: PeriodoDashboard; label: string }[] = [
+  { value: 'hoje', label: 'Hoje' },
+  { value: 'ontem', label: 'Ontem' },
+  { value: 'semana', label: 'Semana' },
+  { value: 'mes', label: 'Mês' },
+  { value: 'ano', label: 'Ano' },
+]
+
+// Relatórios (Capítulo 7.12 do PRD) — "vendas por período, produto e
+// categoria" (RF-REL-01): o seletor de período faltava aqui — o relatório
+// somava o histórico inteiro sem filtro (achado da auditoria de regras de
+// negócio); giro de estoque por categoria (RF-REL-02) continua a partir de
+// vendas reais.
 export default function Relatorios() {
+  const [periodo, setPeriodo] = useState<PeriodoDashboard>('mes')
   const vendas = useVendas().filter((v) => !v.cancelada)
   const produtos = useProdutos()
-  const ranking = calcularRanking(vendas)
+  const vendasDoPeriodo = vendasNoPeriodo(vendas, periodo)
+  const ranking = calcularRanking(vendasDoPeriodo)
 
   const porCategoria = Array.from(new Set(produtos.map((p) => p.categoria))).map((categoria) => {
     const itensDaCategoria = produtos.filter((p) => p.categoria === categoria)
@@ -19,6 +34,25 @@ export default function Relatorios() {
 
   return (
     <div className="max-w-3xl space-y-8">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h2 className="font-semibold text-lg">Relatórios</h2>
+        <div className="flex gap-1.5 flex-wrap">
+          {PERIODOS.map((p) => (
+            <button
+              key={p.value}
+              onClick={() => setPeriodo(p.value)}
+              className={`text-xs rounded-full px-3 py-1.5 border transition-colors min-h-[44px] ${
+                periodo === p.value
+                  ? 'bg-seg-primary text-white border-seg-primary'
+                  : 'border-black/15 dark:border-white/15 text-black/60 dark:text-white/60'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div>
         <h2 className="font-semibold text-lg mb-3">Vendas por produto</h2>
         {ranking.length === 0 ? (

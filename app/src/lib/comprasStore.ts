@@ -9,7 +9,7 @@ export const useCompras = store.useStore
 
 export function criarCompra(fornecedor: Fornecedor, itens: ItemCompra[]): Compra {
   const nova: Compra = {
-    id: `compra-${Date.now()}`,
+    id: `compra-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     fornecedor,
     status: 'pendente',
     dataPedido: new Date().toISOString().slice(0, 10),

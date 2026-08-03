@@ -19,6 +19,11 @@ export default function Caixa() {
   const [fechado, setFechado] = useState(false)
   const [valorInformado, setValorInformado] = useState('')
   const [diferenca, setDiferenca] = useState<number | null>(null)
+  // Soma de vários valores em ponto flutuante pode fechar em algo como
+  // 149.99999999999997 em vez de 150 mesmo quando matematicamente idêntico
+  // — comparar com === 0 acusava "diferença" de fração de centavo que não
+  // existe de verdade (achado da auditoria de qualidade de código).
+  const diferencaConferida = diferenca !== null && Math.abs(diferenca) < 0.01
 
   const vendasDoTurno = vendas.filter((v) => !v.cancelada && new Date(v.criadoEm) >= new Date(TURNO_CAIXA_MOCK.abertoEm))
   const vendasEmDinheiro = vendasDoTurno.filter((v) => v.formaPagamento === 'dinheiro')
@@ -33,7 +38,7 @@ export default function Caixa() {
     const valorTexto = prompt(tipo === 'sangria' ? 'Valor da sangria (R$)' : 'Valor do suprimento (R$)')
     const valor = Number(valorTexto)
     if (!valor || valor <= 0) return
-    setMovimentos((prev) => [...prev, { id: `mov-${Date.now()}`, tipo, valor }])
+    setMovimentos((prev) => [...prev, { id: `mov-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, tipo, valor }])
   }
 
   function fechar() {
@@ -133,8 +138,8 @@ export default function Caixa() {
           </button>
         </div>
       ) : (
-        <div className={`rounded-lg border p-3 text-sm ${diferenca === 0 ? 'border-success/30 bg-success/10' : 'border-warning/30 bg-warning/10'}`}>
-          {diferenca === 0 ? (
+        <div className={`rounded-lg border p-3 text-sm ${diferencaConferida ? 'border-success/30 bg-success/10' : 'border-warning/30 bg-warning/10'}`}>
+          {diferencaConferida ? (
             <p className="text-success font-medium">Caixa conferido — sem diferença.</p>
           ) : (
             <p className={diferenca! < 0 ? 'text-danger font-medium' : 'text-warning font-medium'}>

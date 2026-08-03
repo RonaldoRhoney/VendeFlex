@@ -79,7 +79,7 @@ export default function Vendas() {
             <span className="font-[var(--font-mono-fin)]">{formatarReais(venda.total)}</span>
           </div>
           {!venda.cancelada && (
-            <button onClick={() => cancelar(venda)} className="text-xs text-danger hover:underline">
+            <button onClick={() => cancelar(venda)} className="text-xs text-danger hover:underline min-h-[44px] inline-flex items-center">
               Cancelar venda
             </button>
           )}

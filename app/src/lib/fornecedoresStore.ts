@@ -7,7 +7,7 @@ const store = createLocalStore<Fornecedor>('vendeflex.fornecedores', FORNECEDORE
 export const useFornecedores = store.useStore
 
 export function criarFornecedor(dados: Omit<Fornecedor, 'id'>): Fornecedor {
-  const novo: Fornecedor = { ...dados, id: `forn-${Date.now()}` }
+  const novo: Fornecedor = { ...dados, id: `forn-${Date.now()}-${Math.random().toString(36).slice(2, 7)}` }
   store.salvar([...store.ler(), novo])
   return novo
 }

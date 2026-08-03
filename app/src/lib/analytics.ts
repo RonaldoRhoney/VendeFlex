@@ -4,7 +4,7 @@
 // auditoria de regras de negócio). Continua sem backend: os dados-fonte são
 // só o que existe em localStorage nesta fase, por isso início "zerado" é o
 // resultado correto (e esperado) enquanto não houver venda nenhuma.
-import type { IndicadorPeriodo, LinhaDRE, PeriodoDashboard, RankingProduto, VendaRegistrada } from './types'
+import type { IndicadorPeriodo, LinhaDRE, PeriodoDashboard, Produto, RankingProduto, VendaRegistrada } from './types'
 
 function inicioPeriodo(periodo: PeriodoDashboard, agora: Date): Date {
   const inicio = new Date(agora)
@@ -48,7 +48,7 @@ function deslocarParaPeriodoAnterior(periodo: PeriodoDashboard, agora: Date): Da
   return anterior
 }
 
-function vendasNoPeriodo(vendas: VendaRegistrada[], periodo: PeriodoDashboard, agora: Date): VendaRegistrada[] {
+export function vendasNoPeriodo(vendas: VendaRegistrada[], periodo: PeriodoDashboard, agora: Date = new Date()): VendaRegistrada[] {
   const inicio = inicioPeriodo(periodo, agora)
   const fim = fimPeriodo(periodo, agora)
   return vendas.filter((v) => {
@@ -96,6 +96,36 @@ export function calcularRanking(vendas: VendaRegistrada[]): RankingProduto[] {
   return Array.from(mapa.values())
     .sort((a, b) => b.quantidadeVendida - a.quantidadeVendida)
     .slice(0, 5)
+}
+
+// RF-DSH-02 (Cap. 8 do PRD): "produtos mais vendidos, mais lucrativos, sem
+// venda e com estoque baixo" — calcularRanking só cobria o primeiro
+// recorte (ordenado por quantidade); este cobre o segundo, ordenado por
+// lucro gerado no período (achado da auditoria de regras de negócio).
+export function calcularRankingLucratividade(vendas: VendaRegistrada[]): RankingProduto[] {
+  const mapa = new Map<string, RankingProduto>()
+  for (const venda of vendas) {
+    for (const item of venda.itens) {
+      const lucroItem = (item.produto.precoVenda - item.produto.precoCusto) * item.quantidade
+      const atual = mapa.get(item.produto.id)
+      if (atual) {
+        atual.quantidadeVendida += item.quantidade
+        atual.lucroGerado += lucroItem
+      } else {
+        mapa.set(item.produto.id, { produto: item.produto, quantidadeVendida: item.quantidade, lucroGerado: lucroItem })
+      }
+    }
+  }
+  return Array.from(mapa.values())
+    .sort((a, b) => b.lucroGerado - a.lucroGerado)
+    .slice(0, 5)
+}
+
+// Terceiro recorte do RF-DSH-02: produtos ativos que não tiveram nenhuma
+// venda no período selecionado — ajuda o dono a identificar encalhe.
+export function produtosSemVenda(produtos: Produto[], vendas: VendaRegistrada[]): Produto[] {
+  const vendidos = new Set(vendas.flatMap((v) => v.itens.map((i) => i.produto.id)))
+  return produtos.filter((p) => p.ativo && !vendidos.has(p.id))
 }
 
 export function calcularDRE(vendas: VendaRegistrada[], periodo: PeriodoDashboard): LinhaDRE[] {

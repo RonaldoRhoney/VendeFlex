@@ -36,6 +36,7 @@ create table if not exists public.caixa_turnos (
   operador_id uuid not null references auth.users(id),
   valor_abertura numeric(10,2) not null default 0,
   valor_fechamento numeric(10,2),
+  diferenca numeric(10,2),
   status text not null default 'aberto' check (status in ('aberto', 'fechado')),
   aberto_em timestamptz not null default now(),
   fechado_em timestamptz
@@ -70,6 +71,7 @@ declare
   v_produto_id uuid;
   v_quantidade numeric;
   v_preco numeric(10,2);
+  v_estoque_atual numeric(10,2);
   v_subtotal numeric(10,2) := 0;
   v_total numeric(10,2);
 begin
@@ -80,16 +82,31 @@ begin
     raise exception 'Venda precisa ter ao menos um item.';
   end if;
 
+  -- Primeiro passe: valida produto/tenant, valida estoque suficiente
+  -- (sem isso, registrar_movimento_estoque só zera o saldo em vez de
+  -- barrar a venda — achado da auditoria de regras de negócio) e soma
+  -- o subtotal antes de decidir o desconto.
   for v_item in select * from jsonb_array_elements(p_itens) loop
     v_produto_id := (v_item->>'produto_id')::uuid;
     v_quantidade := (v_item->>'quantidade')::numeric;
-    select preco_venda into v_preco from public.produtos
-      where id = v_produto_id and tenant_id = p_tenant_id;
+    select preco_venda, estoque_atual into v_preco, v_estoque_atual from public.produtos
+      where id = v_produto_id and tenant_id = p_tenant_id and ativo = true;
     if v_preco is null then
-      raise exception 'Produto % não encontrado neste negócio.', v_produto_id;
+      raise exception 'Produto % não encontrado ou inativo neste negócio.', v_produto_id;
+    end if;
+    if v_estoque_atual < v_quantidade then
+      raise exception 'Estoque insuficiente para o produto %.', v_produto_id;
     end if;
     v_subtotal := v_subtotal + v_preco * v_quantidade;
   end loop;
+
+  -- Desconto nunca pode virar a venda negativa/zerada às custas do subtotal
+  -- real — sem este teto, um vendedor podia informar p_desconto = subtotal
+  -- e vender a mercadoria de graça com o caixa fechando "certo" (achado da
+  -- auditoria de segurança).
+  if coalesce(p_desconto, 0) > v_subtotal then
+    raise exception 'Desconto não pode ser maior que o subtotal da venda.';
+  end if;
 
   v_total := greatest(v_subtotal - coalesce(p_desconto, 0), 0);
 
@@ -100,7 +117,8 @@ begin
   for v_item in select * from jsonb_array_elements(p_itens) loop
     v_produto_id := (v_item->>'produto_id')::uuid;
     v_quantidade := (v_item->>'quantidade')::numeric;
-    select preco_venda into v_preco from public.produtos where id = v_produto_id;
+    select preco_venda into v_preco from public.produtos
+      where id = v_produto_id and tenant_id = p_tenant_id;
 
     insert into public.venda_itens (venda_id, produto_id, quantidade, preco_unitario)
     values (v_venda_id, v_produto_id, v_quantidade, v_preco);
@@ -167,8 +185,10 @@ begin
   if v_turno is null then
     raise exception 'Turno de caixa não encontrado.';
   end if;
-  if not public.is_tenant_member(v_turno.tenant_id) then
-    raise exception 'Você não faz parte deste negócio.';
+  -- Sem isto, qualquer membro do tenant fechava o turno de outro operador
+  -- informando o valor que quisesse (achado da auditoria de segurança).
+  if not (v_turno.operador_id = auth.uid() or public.is_tenant_role_in(v_turno.tenant_id, array['dono','financeiro'])) then
+    raise exception 'Só o operador do turno, dono ou financeiro podem fechar este caixa.';
   end if;
   if v_turno.status = 'fechado' then
     raise exception 'Turno já está fechado.';
@@ -188,7 +208,7 @@ begin
   v_diferenca := p_valor_informado - v_saldo_estimado;
 
   update public.caixa_turnos
-    set status = 'fechado', valor_fechamento = p_valor_informado, fechado_em = now()
+    set status = 'fechado', valor_fechamento = p_valor_informado, diferenca = v_diferenca, fechado_em = now()
     where id = p_turno_id;
 
   return v_diferenca;
@@ -233,7 +253,15 @@ create policy caixa_movimentos_select_membro on public.caixa_movimentos
   for select using (
     exists (select 1 from public.caixa_turnos t where t.id = turno_id and public.is_tenant_member(t.tenant_id))
   );
+-- Só o operador do turno (ou dono/financeiro) pode lançar sangria/suprimento,
+-- e só enquanto o turno está aberto — sem isso, qualquer membro lançava
+-- sangria de valor arbitrário até num turno já fechado (achado da
+-- auditoria de segurança).
 create policy caixa_movimentos_inserir_membro on public.caixa_movimentos
   for insert with check (
-    exists (select 1 from public.caixa_turnos t where t.id = turno_id and public.is_tenant_member(t.tenant_id))
+    exists (
+      select 1 from public.caixa_turnos t
+      where t.id = turno_id and t.status = 'aberto'
+        and (t.operador_id = auth.uid() or public.is_tenant_role_in(t.tenant_id, array['dono','financeiro']))
+    )
   );

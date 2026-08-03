@@ -22,7 +22,9 @@ const FORMAS: { value: FormaPagamento; label: string }[] = [
 // papel de usuário (não existe sistema de papéis/permissão ainda) — anotado
 // como simplificação consciente, não esquecimento.
 export default function PDV() {
-  const produtos = useProdutos()
+  // Produto inativado (RF-PRD-05) não pode ser vendido — só fica visível na
+  // tela de cadastro (Produtos.tsx), pro dono poder reativar se precisar.
+  const produtos = useProdutos().filter((p) => p.ativo)
   const [busca, setBusca] = useState('')
   const [carrinho, setCarrinho] = useState<ItemCarrinho[]>([])
   const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>('dinheiro')

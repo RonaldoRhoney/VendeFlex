@@ -24,7 +24,7 @@ export default function ThemeToggle() {
     <button
       onClick={() => setModo((m) => (m === 'dark' ? 'light' : 'dark'))}
       aria-label={modo === 'dark' ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
-      className="w-9 h-9 rounded-lg border border-black/10 dark:border-white/15 flex items-center justify-center text-base transition-transform active:scale-90 shrink-0"
+      className="w-11 h-11 rounded-lg border border-black/10 dark:border-white/15 flex items-center justify-center text-base transition-transform active:scale-90 shrink-0"
     >
       {modo === 'dark' ? '☀️' : '🌙'}
     </button>

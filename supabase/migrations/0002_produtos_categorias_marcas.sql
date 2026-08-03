@@ -60,7 +60,8 @@ create trigger set_updated_at_produtos before update on public.produtos for each
 -- ------------------------------------------------------------
 create or replace view public.vw_produtos_venda as
   select id, tenant_id, nome, sku, categoria_id, marca_id, codigo_barras, preco_venda, estoque_atual, ativo
-  from public.produtos;
+  from public.produtos
+  where public.is_tenant_member(tenant_id) and ativo = true;
 
 -- ------------------------------------------------------------
 -- RLS
@@ -86,13 +87,19 @@ create policy marcas_escrever_dono_estoquista on public.marcas
 -- dono/estoquista (RF-PRD-01/05).
 create policy produtos_select_sem_vendedor on public.produtos
   for select using (public.is_tenant_role_in(tenant_id, array['dono','financeiro','estoquista']));
-create policy produtos_escrever_dono_estoquista on public.produtos
-  for all using (public.is_tenant_role_in(tenant_id, array['dono','estoquista']))
+
+-- RF-PRD-05 (Cap. 7.2): "editar e inativar produto sem excluir histórico de
+-- vendas associado" — o caminho é inativar (update ativo=false), não
+-- apagar. Por isso só insert/update têm policy; sem policy de delete, o
+-- Postgres nega DELETE por padrão pra authenticated (dono/estoquista
+-- desativam o produto via update comum, coberto pela policy abaixo).
+create policy produtos_inserir_dono_estoquista on public.produtos
+  for insert with check (public.is_tenant_role_in(tenant_id, array['dono','estoquista']));
+create policy produtos_atualizar_dono_estoquista on public.produtos
+  for update using (public.is_tenant_role_in(tenant_id, array['dono','estoquista']))
   with check (public.is_tenant_role_in(tenant_id, array['dono','estoquista']));
 
--- A view em si não tem RLS própria (views herdam do owner por padrão) —
--- concede select explícito a qualquer membro do tenant via security_invoker
--- não é suportado nesta versão simples; a filtragem por tenant acontece no
--- WHERE de quem consulta (tenant_id = ...), reforçada pelo fato de que
--- vw_produtos_venda nunca é gravável (só select) e não expõe dado sensível.
+-- View roda como owner (security definer implícito de view) mas agora tem
+-- WHERE is_tenant_member(tenant_id) — cada membro só vê os produtos do
+-- próprio tenant, nunca de outro negócio da plataforma.
 grant select on public.vw_produtos_venda to authenticated;

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { criarProduto, editarProduto, excluirProduto, useProdutos } from '../../lib/produtosStore'
+import { alternarAtivoProduto, criarProduto, editarProduto, useProdutos } from '../../lib/produtosStore'
 import { formatarReais } from '../../lib/format'
 import { useCategorias } from '../../lib/categoriasStore'
 import EmptyState from '../../components/EmptyState'
@@ -80,10 +80,11 @@ export default function Produtos() {
     setForm(FORM_VAZIO)
   }
 
-  function apagar(id: string) {
-    if (!confirm('Excluir este produto?')) return
-    excluirProduto(id)
-    setToast({ mensagem: 'Produto excluído.', tipo: 'neutro' })
+  function alternarAtivo(p: Produto) {
+    const novoAtivo = !p.ativo
+    if (!confirm(novoAtivo ? 'Reativar este produto?' : 'Inativar este produto? Ele some das telas de venda, mas o histórico é preservado.')) return
+    alternarAtivoProduto(p.id, novoAtivo)
+    setToast({ mensagem: novoAtivo ? 'Produto reativado.' : 'Produto inativado.', tipo: 'neutro' })
   }
 
   return (
@@ -211,8 +212,11 @@ export default function Produtos() {
               </thead>
               <tbody>
                 {visiveis.map((p) => (
-                  <tr key={p.id} className="border-b border-black/5 dark:border-white/5 last:border-0">
-                    <td className="px-3 py-2.5 font-medium">{p.nome}</td>
+                  <tr key={p.id} className={`border-b border-black/5 dark:border-white/5 last:border-0 ${p.ativo ? '' : 'opacity-40'}`}>
+                    <td className="px-3 py-2.5 font-medium">
+                      {p.nome}
+                      {!p.ativo && <span className="ml-2 text-[10px] uppercase tracking-wide text-black/40 dark:text-white/40">Inativo</span>}
+                    </td>
                     <td className="px-3 py-2.5 text-black/50 dark:text-white/50">{p.sku}</td>
                     <td className="px-3 py-2.5 text-black/50 dark:text-white/50">{p.categoria}</td>
                     <td className="px-3 py-2.5 text-right font-[var(--font-mono-fin)]">{formatarReais(p.precoCusto)}</td>
@@ -225,11 +229,17 @@ export default function Produtos() {
                       {p.estoqueAtual}
                     </td>
                     <td className="px-3 py-2.5 text-right whitespace-nowrap">
-                      <button onClick={() => abrirEdicao(p)} className="text-xs text-black/50 dark:text-white/50 hover:underline mr-3">
+                      <button
+                        onClick={() => abrirEdicao(p)}
+                        className="text-xs text-black/50 dark:text-white/50 hover:underline mr-3 min-h-[44px] inline-flex items-center"
+                      >
                         Editar
                       </button>
-                      <button onClick={() => apagar(p.id)} className="text-xs text-danger hover:underline">
-                        Excluir
+                      <button
+                        onClick={() => alternarAtivo(p)}
+                        className={`text-xs hover:underline min-h-[44px] inline-flex items-center ${p.ativo ? 'text-danger' : 'text-success'}`}
+                      >
+                        {p.ativo ? 'Inativar' : 'Reativar'}
                       </button>
                     </td>
                   </tr>

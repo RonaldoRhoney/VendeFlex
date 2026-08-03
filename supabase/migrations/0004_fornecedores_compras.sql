@@ -99,7 +99,12 @@ create policy compras_escrever_dono_estoquista on public.compras
   with check (public.is_tenant_role_in(tenant_id, array['dono','estoquista']));
 
 -- compra_itens não tem tenant_id direto — autoriza via join até compras,
--- mesmo padrão já usado em order_items no MenuFlex.
+-- mesmo padrão já usado em order_items no MenuFlex. O with check também
+-- exige que o produto do item pertença ao MESMO tenant da compra — sem
+-- isso, um dono do tenant A podia inserir um item apontando pro produto_id
+-- de outro tenant (visível via vw_produtos_venda) e, ao avançar a compra
+-- pra "recebido", gravar entrada de estoque no produto alheio (achado
+-- crítico da auditoria de segurança).
 create policy compra_itens_via_compra on public.compra_itens
   for all using (
     exists (
@@ -110,6 +115,7 @@ create policy compra_itens_via_compra on public.compra_itens
   with check (
     exists (
       select 1 from public.compras c
+      join public.produtos p on p.id = produto_id and p.tenant_id = c.tenant_id
       where c.id = compra_id and public.is_tenant_role_in(c.tenant_id, array['dono','estoquista'])
     )
   );

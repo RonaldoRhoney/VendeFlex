@@ -72,7 +72,10 @@ export default function Categorias() {
                 <div key={cat.id} className="rounded-lg border border-black/10 dark:border-white/10 p-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">{cat.nome}</p>
-                    <button onClick={() => excluirCategoria(cat.id)} className="text-xs text-danger hover:underline">
+                    <button
+                      onClick={() => excluirCategoria(cat.id)}
+                      className="text-xs text-danger hover:underline min-h-[44px] inline-flex items-center"
+                    >
                       Excluir
                     </button>
                   </div>

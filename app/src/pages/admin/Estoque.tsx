@@ -30,7 +30,7 @@ export default function Estoque() {
       <div>
         <h2 className="font-semibold text-lg mb-3">Estoque</h2>
         {baixos.length === 0 ? (
-          <p className="text-sm text-black/40 dark:text-white/40">Nenhum produto com estoque abaixo do mínimo.</p>
+          <EmptyState title="Nenhum produto com estoque baixo" description="Todo produto está acima do estoque mínimo cadastrado." />
         ) : (
           <div className="space-y-2">
             {baixos.map((p) => (

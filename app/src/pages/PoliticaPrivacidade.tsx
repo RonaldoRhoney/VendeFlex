@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import Footer from '../components/Footer'
+import HeaderInstitucional from '../components/HeaderInstitucional'
 
 function Secao({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
@@ -13,7 +14,8 @@ function Secao({ titulo, children }: { titulo: string; children: ReactNode }) {
 export default function PoliticaPrivacidade() {
   return (
     <div className="flex flex-col min-h-dvh">
-      <main className="flex-1 max-w-2xl mx-auto px-4 py-16 animate-fade-in">
+      <HeaderInstitucional />
+      <main className="flex-1 max-w-2xl mx-auto px-4 py-12 animate-fade-in">
         <h1 className="font-display text-3xl font-semibold mb-2">Política de Privacidade</h1>
         <p className="text-black/40 dark:text-white/40 text-xs mb-10">Última atualização: agosto de 2026</p>
 

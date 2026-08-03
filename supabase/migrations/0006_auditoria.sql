@@ -31,17 +31,33 @@ set search_path = public
 as $$
 declare
   v_tenant_id uuid;
+  v_registro_id uuid;
 begin
-  v_tenant_id := coalesce(new.tenant_id, old.tenant_id);
+  -- Em trigger de linha, NEW não existe em DELETE (record "new" is not
+  -- assigned yet) — acessar new.tenant_id ali derrubava todo DELETE em
+  -- produtos/vendas/compras com erro (achado da auditoria de segurança).
+  -- Ramifica por tg_op em vez de usar coalesce(new, old).
+  if tg_op = 'DELETE' then
+    v_tenant_id := old.tenant_id;
+    v_registro_id := old.id;
+  else
+    v_tenant_id := new.tenant_id;
+    v_registro_id := new.id;
+  end if;
+
   insert into public.auditoria_logs (tenant_id, usuario_id, acao, tabela_afetada, registro_id, dados_antes, dados_depois)
   values (
     v_tenant_id,
     auth.uid(),
     lower(tg_op),
     tg_table_name,
-    coalesce(new.id, old.id),
-    case when tg_op in ('update', 'delete') then to_jsonb(old) else null end,
-    case when tg_op = 'update' then to_jsonb(new) else null end
+    v_registro_id,
+    -- tg_op vem sempre em maiúsculas ('UPDATE'/'DELETE') — comparar contra
+    -- 'update'/'delete' minúsculos nunca batia, então dados_antes nunca
+    -- era gravado em nenhuma auditoria até agora (bug adicional encontrado
+    -- ao corrigir o crash de DELETE acima).
+    case when tg_op in ('UPDATE', 'DELETE') then to_jsonb(old) else null end,
+    case when tg_op = 'UPDATE' then to_jsonb(new) else null end
   );
   return coalesce(new, old);
 end;
@@ -52,10 +68,12 @@ create trigger trg_auditoria_produtos
   after update or delete on public.produtos
   for each row execute function public.trg_auditoria_generica();
 
+-- estoque_movimentos não tem (e não deve ter) policy de update/delete — é
+-- um log só-inserção escrito exclusivamente por registrar_movimento_estoque()
+-- (0003). Uma trigger de auditoria "after update or delete" nela nunca
+-- dispararia na prática e sugeria uma proteção que não existe de verdade
+-- (achado da auditoria de qualidade de código) — removida por não ter efeito.
 drop trigger if exists trg_auditoria_estoque_movimentos on public.estoque_movimentos;
-create trigger trg_auditoria_estoque_movimentos
-  after update or delete on public.estoque_movimentos
-  for each row execute function public.trg_auditoria_generica();
 
 drop trigger if exists trg_auditoria_vendas on public.vendas;
 create trigger trg_auditoria_vendas

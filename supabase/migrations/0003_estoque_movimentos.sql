@@ -90,6 +90,16 @@ begin
 end;
 $$;
 
+-- registrar_movimento_estoque() é interna por design (chamada só de dentro
+-- de outra função security definer já autorizada: ajustar_estoque_manual,
+-- avancar_status_compra, registrar_venda, cancelar_venda). Sem este revoke,
+-- o Postgres concede EXECUTE a PUBLIC por padrão e o PostgREST expõe toda
+-- função do schema public como RPC — qualquer usuário autenticado poderia
+-- chamar a função direto e zerar o estoque de outro tenant (achado crítico
+-- da auditoria de segurança). Funções security definer continuam podendo
+-- chamá-la entre si mesmo sem grant de execute pro role do caller.
+revoke execute on function public.registrar_movimento_estoque(uuid, text, numeric, text) from public, anon, authenticated;
+
 -- ------------------------------------------------------------
 -- RLS
 -- ------------------------------------------------------------

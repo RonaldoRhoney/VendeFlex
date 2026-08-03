@@ -207,4 +207,19 @@ create policy configuracoes_tenant_gerenciar_dono on public.configuracoes_tenant
 create policy profiles_select_proprio on public.profiles
   for select using (auth.uid() = id or public.is_platform_admin());
 create policy profiles_update_proprio on public.profiles
-  for update using (auth.uid() = id);
+  for update using (auth.uid() = id) with check (auth.uid() = id);
+
+-- RLS não restringe coluna — sem isto, o usuário autenticado poderia fazer
+-- PATCH profiles?id=eq.<próprio id> com {"is_platform_admin": true} e virar
+-- admin de plataforma sozinho (achado crítico da auditoria de segurança).
+-- Restrição em nível de GRANT: só a coluna email é editável pelo próprio
+-- usuário; is_platform_admin só muda via trigger/console (service_role).
+revoke update on public.profiles from authenticated;
+grant update (email) on public.profiles to authenticated;
+
+-- Mesmo raciocínio pra tenants: sem isto, o dono poderia fazer
+-- PATCH tenants?id=eq.<meu tenant> com {"plano":"enterprise"} e liberar um
+-- plano pago de graça. Só os campos de cadastro do negócio ficam editáveis
+-- pelo dono; plano/criado_por/id só via service_role (billing futuro).
+revoke update on public.tenants from authenticated;
+grant update (nome_negocio, cnpj_cpf, segmento) on public.tenants to authenticated;

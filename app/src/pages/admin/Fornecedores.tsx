@@ -99,7 +99,7 @@ export default function Fornecedores() {
                   <span className="text-xs rounded-full border border-black/10 dark:border-white/10 px-2.5 py-1 text-black/60 dark:text-white/60">
                     Pagamento: {f.condicoesPagamento}
                   </span>
-                  <button onClick={() => apagar(f.id)} className="text-xs text-danger hover:underline">
+                  <button onClick={() => apagar(f.id)} className="text-xs text-danger hover:underline min-h-[44px] inline-flex items-center">
                     Excluir
                   </button>
                 </div>
