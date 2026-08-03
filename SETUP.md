@@ -15,7 +15,7 @@ Scaffold inicial do frontend (só interface, dados mockados, zero backend/Supaba
 
 ## Agentes de suporte ao projeto
 
-Criados em `.claude/agents/` (compartilhado com a família RhoneyInc), cada um com um papel único — usar proativamente conforme a descrição de cada `.md`:
+Ficam em `VendeFlex/.claude/agents/` (próprios do repositório, não compartilhados com outros produtos da família), cada um com um papel único — usar proativamente conforme a descrição de cada `.md`:
 - `vendeflex-docs` — mantém este arquivo e `docs/02_Arquitetura.md` atualizados a cada módulo novo/alterado.
 - `vendeflex-security` — auditoria de segurança (hoje focado em não pressupor confiança que ainda não existe; escopo cresce quando o backend for criado).
 - `vendeflex-interacao` — consistência de UX/Design System (Cap. 12 do PRD) entre módulos.
