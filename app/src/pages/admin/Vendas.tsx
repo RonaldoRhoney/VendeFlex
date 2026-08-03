@@ -1,7 +1,10 @@
-import { useVendas } from '../../lib/vendasStore'
+import { useState } from 'react'
+import { cancelarVenda, useVendas } from '../../lib/vendasStore'
+import { registrarMovimentoEstoque } from '../../lib/estoqueStore'
 import { formatarReais } from '../../lib/format'
 import EmptyState from '../../components/EmptyState'
-import type { FormaPagamento } from '../../lib/types'
+import Toast, { type ToastData } from '../../components/admin/Toast'
+import type { FormaPagamento, VendaRegistrada } from '../../lib/types'
 
 const FORMA_LABEL: Record<FormaPagamento, string> = {
   dinheiro: 'Dinheiro',
@@ -10,10 +13,21 @@ const FORMA_LABEL: Record<FormaPagamento, string> = {
 }
 
 // Histórico de Vendas (Capítulo 7.7 do PRD) — lê o que o PDV.tsx registrou
-// via lib/vendasStore.ts (localStorage nesta fase, sem backend). É o
-// próximo elo do fluxo de dados do Cap. 4.5: Venda no PDV → aparece aqui.
+// via lib/vendasStore.ts. RF-PDV-06: cancelar com estorno automático de
+// estoque (nunca reverte silenciosamente — a venda continua no histórico,
+// só marcada como cancelada, pra manter rastreabilidade).
 export default function Vendas() {
   const vendas = useVendas()
+  const [toast, setToast] = useState<ToastData | null>(null)
+
+  function cancelar(venda: VendaRegistrada) {
+    if (!confirm('Cancelar esta venda? O estoque dos itens será estornado.')) return
+    for (const item of venda.itens) {
+      registrarMovimentoEstoque(item.produto.id, 'entrada', item.quantidade, 'Estorno — venda cancelada')
+    }
+    cancelarVenda(venda.id)
+    setToast({ mensagem: 'Venda cancelada e estoque estornado.', tipo: 'neutro' })
+  }
 
   if (vendas.length === 0) {
     return (
@@ -32,11 +46,15 @@ export default function Vendas() {
         <p className="text-xs text-black/40 dark:text-white/40">{vendas.length} venda{vendas.length > 1 ? 's' : ''}</p>
       </div>
       {vendas.map((venda) => (
-        <div key={venda.id} className="rounded-xl border border-black/10 dark:border-white/10 p-4">
+        <div
+          key={venda.id}
+          className={`rounded-xl border p-4 ${venda.cancelada ? 'border-black/10 dark:border-white/10 opacity-50' : 'border-black/10 dark:border-white/10'}`}
+        >
           <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
             <div>
               <p className="text-sm font-medium">
                 {venda.itens.reduce((s, i) => s + i.quantidade, 0)} item(ns) · {venda.vendedor}
+                {venda.cancelada && <span className="text-danger"> · Cancelada</span>}
               </p>
               <p className="text-xs text-black/40 dark:text-white/40">
                 {new Date(venda.criadoEm).toLocaleString('pt-BR')}
@@ -56,12 +74,18 @@ export default function Vendas() {
               </div>
             ))}
           </div>
-          <div className="flex justify-between border-t border-black/10 dark:border-white/10 pt-2 text-sm font-medium">
+          <div className="flex justify-between border-t border-black/10 dark:border-white/10 pt-2 text-sm font-medium mb-2">
             <span>Total</span>
             <span className="font-[var(--font-mono-fin)]">{formatarReais(venda.total)}</span>
           </div>
+          {!venda.cancelada && (
+            <button onClick={() => cancelar(venda)} className="text-xs text-danger hover:underline">
+              Cancelar venda
+            </button>
+          )}
         </div>
       ))}
+      <Toast toast={toast} onClose={() => setToast(null)} />
     </div>
   )
 }

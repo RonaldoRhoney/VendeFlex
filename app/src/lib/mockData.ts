@@ -1,19 +1,10 @@
-// Dados fake — só pra provar o design system nesta fase (Dashboard/PDV/
-// Produtos). Nenhum valor aqui vem de banco; será substituído quando o
-// backend for desenhado numa fase futura.
-import type {
-  Categoria,
-  Compra,
-  Fornecedor,
-  IndicadorPeriodo,
-  LinhaDRE,
-  Marca,
-  MovimentoEstoque,
-  PeriodoDashboard,
-  Produto,
-  RankingProduto,
-  TurnoCaixa,
-} from './types'
+// Dados-SEMENTE — usados só pra popular os stores locais (produtosStore.ts,
+// categoriasStore.ts, fornecedoresStore.ts, comprasStore.ts, estoqueStore.ts,
+// vendasStore.ts) na primeira vez que cada localStorage é lido. Depois
+// disso, toda leitura/escrita de verdade passa pelos stores — nunca use os
+// arrays daqui diretamente numa tela, ou a edição do usuário nunca vai
+// refletir (releria sempre o array estático original).
+import type { Categoria, Compra, Fornecedor, Marca, MovimentoEstoque, Produto, TurnoCaixa } from './types'
 
 const NOMES = [
   'Camiseta Básica P',
@@ -54,38 +45,6 @@ function gerarProdutos(): Produto[] {
 }
 
 export const PRODUTOS_MOCK: Produto[] = gerarProdutos()
-
-export function buscarProdutoPorCodigo(codigo: string): Produto | null {
-  const termo = codigo.trim().toLowerCase()
-  if (!termo) return null
-  return (
-    PRODUTOS_MOCK.find((p) => p.sku.toLowerCase() === termo || p.nome.toLowerCase().includes(termo)) ?? null
-  )
-}
-
-const INDICADORES_POR_PERIODO: Record<PeriodoDashboard, IndicadorPeriodo> = {
-  hoje: { faturamento: 1842.5, lucro: 612.3, margem: 33.2, ticketMedio: 61.4, variacaoFaturamentoPercent: 8.4, variacaoLucroPercent: 5.1 },
-  ontem: { faturamento: 1701.2, lucro: 589.1, margem: 34.6, ticketMedio: 58.9, variacaoFaturamentoPercent: -2.1, variacaoLucroPercent: -1.4 },
-  semana: { faturamento: 11890.4, lucro: 3921.6, margem: 33.0, ticketMedio: 63.2, variacaoFaturamentoPercent: 12.7, variacaoLucroPercent: 10.2 },
-  mes: { faturamento: 48210.9, lucro: 15980.3, margem: 33.1, ticketMedio: 60.8, variacaoFaturamentoPercent: 6.3, variacaoLucroPercent: 4.8 },
-  ano: { faturamento: 512300.0, lucro: 168900.0, margem: 33.0, ticketMedio: 59.7, variacaoFaturamentoPercent: 18.9, variacaoLucroPercent: 15.4 },
-}
-
-export function indicadoresDoPeriodo(periodo: PeriodoDashboard): IndicadorPeriodo {
-  return INDICADORES_POR_PERIODO[periodo]
-}
-
-export function rankingMaisVendidos(): RankingProduto[] {
-  return PRODUTOS_MOCK.slice(0, 5).map((produto, i) => ({
-    produto,
-    quantidadeVendida: 40 - i * 6,
-    lucroGerado: (produto.precoVenda - produto.precoCusto) * (40 - i * 6),
-  }))
-}
-
-export function produtosEstoqueBaixo(): Produto[] {
-  return PRODUTOS_MOCK.filter((p) => p.estoqueAtual <= p.estoqueMinimo)
-}
 
 // ============================================================
 // CATEGORIAS E MARCAS (Cap. 7.3)
@@ -151,11 +110,13 @@ export const COMPRAS_MOCK: Compra[] = [
 
 // ============================================================
 // ESTOQUE — MOVIMENTOS (Cap. 7.6)
+// Convenção de sinal: quantidade é sempre o delta real aplicado ao saldo
+// (entrada positiva, saída/perda negativa, ajuste como o operador digitar).
 // ============================================================
 export const MOVIMENTOS_ESTOQUE_MOCK: MovimentoEstoque[] = [
   { id: 'mov-1', produto: PRODUTOS_MOCK[0], tipo: 'entrada', quantidade: 40, motivo: 'Recebimento — Compra #1', data: '2026-07-18T09:12:00' },
-  { id: 'mov-2', produto: PRODUTOS_MOCK[4], tipo: 'saida', quantidade: 1, motivo: 'Venda PDV', data: '2026-08-01T14:32:00' },
-  { id: 'mov-3', produto: PRODUTOS_MOCK[7], tipo: 'perda', quantidade: 2, motivo: 'Produto danificado', data: '2026-07-29T11:05:00' },
+  { id: 'mov-2', produto: PRODUTOS_MOCK[4], tipo: 'saida', quantidade: -1, motivo: 'Venda PDV', data: '2026-08-01T14:32:00' },
+  { id: 'mov-3', produto: PRODUTOS_MOCK[7], tipo: 'perda', quantidade: -2, motivo: 'Produto danificado', data: '2026-07-29T11:05:00' },
   { id: 'mov-4', produto: PRODUTOS_MOCK[10], tipo: 'ajuste', quantidade: -1, motivo: 'Divergência de inventário', data: '2026-07-30T17:40:00' },
 ]
 
@@ -168,22 +129,5 @@ export const TURNO_CAIXA_MOCK: TurnoCaixa = {
   valorAbertura: 150.0,
   valorFechamento: null,
   status: 'aberto',
-  abertoEm: '2026-08-02T08:00:00',
-}
-
-// ============================================================
-// FINANCEIRO — DRE simplificado (Cap. 7.9)
-// ============================================================
-export function dreSimplificado(periodo: PeriodoDashboard): LinhaDRE[] {
-  const ind = indicadoresDoPeriodo(periodo)
-  const custoProdutos = ind.faturamento - ind.lucro
-  const despesasOperacionais = ind.faturamento * 0.08
-  const lucroLiquido = ind.lucro - despesasOperacionais
-  return [
-    { label: 'Faturamento bruto', valor: ind.faturamento },
-    { label: 'Custo dos produtos vendidos', valor: -custoProdutos },
-    { label: 'Lucro bruto', valor: ind.lucro, destaque: true },
-    { label: 'Despesas operacionais (estimado)', valor: -despesasOperacionais },
-    { label: 'Lucro líquido', valor: lucroLiquido, destaque: true },
-  ]
+  abertoEm: new Date(new Date().setHours(8, 0, 0, 0)).toISOString(),
 }

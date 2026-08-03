@@ -29,6 +29,7 @@ export interface VendaRegistrada {
   formaPagamento: FormaPagamento
   vendedor: string
   criadoEm: string
+  cancelada?: boolean
 }
 
 export interface IndicadorPeriodo {

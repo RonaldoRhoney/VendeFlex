@@ -1,6 +1,9 @@
 import { useState } from 'react'
-import { indicadoresDoPeriodo, produtosEstoqueBaixo, rankingMaisVendidos } from '../../lib/mockData'
+import { calcularIndicadores, calcularRanking } from '../../lib/analytics'
+import { useVendas } from '../../lib/vendasStore'
+import { useProdutos } from '../../lib/produtosStore'
 import { formatarPercentual, formatarReais } from '../../lib/format'
+import EmptyState from '../../components/EmptyState'
 import type { PeriodoDashboard } from '../../lib/types'
 
 const PERIODOS: { value: PeriodoDashboard; label: string }[] = [
@@ -17,7 +20,7 @@ function CardIndicador({ label, valor, variacao }: { label: string; valor: strin
       <div className="absolute top-0 left-0 right-0 h-0.5 bg-seg-primary" />
       <p className="text-xs text-black/40 dark:text-white/40 mb-1">{label}</p>
       <p className="text-xl font-semibold font-[var(--font-mono-fin)] tabular-nums">{valor}</p>
-      {variacao !== undefined && (
+      {variacao !== undefined && variacao !== 0 && (
         <p className={`text-xs mt-1 ${variacao >= 0 ? 'text-success' : 'text-danger'}`}>
           {formatarPercentual(variacao)} vs. período anterior
         </p>
@@ -26,13 +29,16 @@ function CardIndicador({ label, valor, variacao }: { label: string; valor: strin
   )
 }
 
-// Dashboard Executivo (Capítulo 8 do PRD) — dados mockados (lib/mockData.ts),
-// sem nenhuma chamada real ao backend nesta fase.
+// Dashboard Executivo (Capítulo 8 do PRD) — indicadores calculados de
+// verdade a partir das vendas registradas (lib/vendasStore.ts via
+// lib/analytics.ts), não mais números fixos ignorando o que o PDV já grava.
 export default function Dashboard() {
   const [periodo, setPeriodo] = useState<PeriodoDashboard>('hoje')
-  const indicadores = indicadoresDoPeriodo(periodo)
-  const ranking = rankingMaisVendidos()
-  const estoqueBaixo = produtosEstoqueBaixo()
+  const vendas = useVendas().filter((v) => !v.cancelada)
+  const produtos = useProdutos()
+  const indicadores = calcularIndicadores(vendas, periodo)
+  const ranking = calcularRanking(vendas)
+  const estoqueBaixo = produtos.filter((p) => p.estoqueAtual <= p.estoqueMinimo)
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -77,22 +83,26 @@ export default function Dashboard() {
 
       <div>
         <h3 className="text-sm font-medium mb-3">Produtos mais vendidos</h3>
-        <div className="space-y-2">
-          {ranking.map((r) => (
-            <div
-              key={r.produto.id}
-              className="flex items-center justify-between rounded-lg border border-black/10 dark:border-white/10 px-3 py-2.5"
-            >
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{r.produto.nome}</p>
-                <p className="text-xs text-black/40 dark:text-white/40">{r.quantidadeVendida} unidades vendidas</p>
+        {ranking.length === 0 ? (
+          <EmptyState title="Nenhuma venda ainda" description="Finalize uma venda no PDV pra ver o ranking aqui." />
+        ) : (
+          <div className="space-y-2">
+            {ranking.map((r) => (
+              <div
+                key={r.produto.id}
+                className="flex items-center justify-between rounded-lg border border-black/10 dark:border-white/10 px-3 py-2.5"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{r.produto.nome}</p>
+                  <p className="text-xs text-black/40 dark:text-white/40">{r.quantidadeVendida} unidades vendidas</p>
+                </div>
+                <p className="text-sm font-medium font-[var(--font-mono-fin)] tabular-nums shrink-0">
+                  {formatarReais(r.lucroGerado)}
+                </p>
               </div>
-              <p className="text-sm font-medium font-[var(--font-mono-fin)] tabular-nums shrink-0">
-                {formatarReais(r.lucroGerado)}
-              </p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

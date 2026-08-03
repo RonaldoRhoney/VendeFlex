@@ -35,6 +35,13 @@ export function registrarVenda(itens: ItemCarrinho[], total: number, formaPagame
   return venda
 }
 
+// RF-PDV-06: cancelar venda com estorno automático de estoque. Quem chama
+// (Vendas.tsx) já cuida do estorno via registrarMovimentoEstoque — aqui só
+// marca a venda como cancelada, nunca some do histórico (rastreabilidade).
+export function cancelarVenda(id: string) {
+  salvarVendas(lerVendas().map((v) => (v.id === id ? { ...v, cancelada: true } : v)))
+}
+
 // Hook que reflete o histórico em tempo real — inclusive entre abas do
 // painel (evento customizado) e entre janelas do navegador (evento nativo
 // "storage").
