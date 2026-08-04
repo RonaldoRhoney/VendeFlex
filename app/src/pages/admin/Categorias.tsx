@@ -16,21 +16,29 @@ export default function Categorias() {
 
   const raiz = categorias.filter((c) => !c.categoriaPaiId)
 
-  function adicionarCategoria(e: React.FormEvent) {
+  async function adicionarCategoria(e: React.FormEvent) {
     e.preventDefault()
     if (!novaCategoria.trim()) return
-    criarCategoria(novaCategoria.trim(), categoriaPai || null)
-    setNovaCategoria('')
-    setCategoriaPai('')
-    setToast({ mensagem: 'Categoria cadastrada.', tipo: 'sucesso' })
+    try {
+      await criarCategoria(novaCategoria.trim(), categoriaPai || null)
+      setNovaCategoria('')
+      setCategoriaPai('')
+      setToast({ mensagem: 'Categoria cadastrada.', tipo: 'sucesso' })
+    } catch (err) {
+      setToast({ mensagem: err instanceof Error ? err.message : 'Erro ao cadastrar categoria.', tipo: 'erro' })
+    }
   }
 
-  function adicionarMarca(e: React.FormEvent) {
+  async function adicionarMarca(e: React.FormEvent) {
     e.preventDefault()
     if (!novaMarca.trim()) return
-    criarMarca(novaMarca.trim())
-    setNovaMarca('')
-    setToast({ mensagem: 'Marca cadastrada.', tipo: 'sucesso' })
+    try {
+      await criarMarca(novaMarca.trim())
+      setNovaMarca('')
+      setToast({ mensagem: 'Marca cadastrada.', tipo: 'sucesso' })
+    } catch (err) {
+      setToast({ mensagem: err instanceof Error ? err.message : 'Erro ao cadastrar marca.', tipo: 'erro' })
+    }
   }
 
   return (
@@ -73,7 +81,7 @@ export default function Categorias() {
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">{cat.nome}</p>
                     <button
-                      onClick={() => excluirCategoria(cat.id)}
+                      onClick={() => excluirCategoria(cat.id).catch((err) => setToast({ mensagem: err instanceof Error ? err.message : 'Erro ao excluir.', tipo: 'erro' }))}
                       className="text-xs text-danger hover:underline min-h-[44px] inline-flex items-center"
                     >
                       Excluir
@@ -122,7 +130,7 @@ export default function Categorias() {
                 className="text-sm rounded-full border border-black/10 dark:border-white/10 px-3 py-1.5 flex items-center gap-2"
               >
                 {m.nome}
-                <button onClick={() => excluirMarca(m.id)} className="text-danger text-xs">
+                <button onClick={() => excluirMarca(m.id).catch((err) => setToast({ mensagem: err instanceof Error ? err.message : 'Erro ao excluir.', tipo: 'erro' }))} className="text-danger text-xs">
                   ×
                 </button>
               </span>

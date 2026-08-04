@@ -1,42 +1,37 @@
 import { useState } from 'react'
 import Toast, { type ToastData } from '../../components/admin/Toast'
-import { findSegmentTheme } from '../../lib/segmentThemes'
-import type { useSegmentTheme } from '../../lib/useSegmentTheme'
+import { supabase } from '../../lib/supabaseClient'
+import { obterTenantAtual } from '../../lib/tenant'
 
 interface ConfiguracoesProps {
-  temaSegmento: ReturnType<typeof useSegmentTheme>
-}
-
-const CHAVE_NEGOCIO = 'vendeflex.negocio'
-
-interface DadosNegocio {
-  nome: string
-  cnpjCpf: string
-}
-
-function lerDadosNegocio(): DadosNegocio {
-  try {
-    const raw = localStorage.getItem(CHAVE_NEGOCIO)
-    return raw ? (JSON.parse(raw) as DadosNegocio) : { nome: '', cnpjCpf: '' }
-  } catch {
-    return { nome: '', cnpjCpf: '' }
-  }
+  nomeNegocio: string
+  onTrocarSegmento: () => void
 }
 
 // Configurações (Capítulo 7.14 do PRD) — dados do tenant (RF-CFG-01) e
-// gestão de usuários e papéis (RF-CFG-02). Dados do negócio persistidos em
-// localStorage nesta fase (sem backend); usuários/papéis são só ilustrativos
-// (convite real depende de autenticação de verdade).
-export default function Configuracoes({ temaSegmento }: ConfiguracoesProps) {
-  const [dados, setDados] = useState<DadosNegocio>(lerDadosNegocio)
+// gestão de usuários e papéis (RF-CFG-02), agora contra o Supabase real.
+// Só nome_negocio/cnpj_cpf/segmento são editáveis pelo dono (grant de
+// coluna da migration 0001 bloqueia plano/criado_por/id).
+export default function Configuracoes({ nomeNegocio, onTrocarSegmento }: ConfiguracoesProps) {
+  const [nome, setNome] = useState(nomeNegocio)
+  const [cnpjCpf, setCnpjCpf] = useState('')
+  const [salvando, setSalvando] = useState(false)
   const [toast, setToast] = useState<ToastData | null>(null)
 
-  const segmentoAtual = findSegmentTheme(temaSegmento.segmentId)
-
-  function salvar(e: React.FormEvent) {
+  async function salvar(e: React.FormEvent) {
     e.preventDefault()
-    localStorage.setItem(CHAVE_NEGOCIO, JSON.stringify(dados))
-    setToast({ mensagem: 'Dados salvos.', tipo: 'sucesso' })
+    const tenant = obterTenantAtual()
+    if (!supabase || !tenant) return
+    setSalvando(true)
+    try {
+      const { error } = await supabase.from('tenants').update({ nome_negocio: nome, cnpj_cpf: cnpjCpf }).eq('id', tenant.tenantId)
+      if (error) throw error
+      setToast({ mensagem: 'Dados salvos.', tipo: 'sucesso' })
+    } catch (err) {
+      setToast({ mensagem: err instanceof Error ? err.message : 'Erro ao salvar.', tipo: 'erro' })
+    } finally {
+      setSalvando(false)
+    }
   }
 
   return (
@@ -47,8 +42,8 @@ export default function Configuracoes({ temaSegmento }: ConfiguracoesProps) {
           <div>
             <label className="text-sm font-medium block mb-1.5">Nome do negócio</label>
             <input
-              value={dados.nome}
-              onChange={(e) => setDados((d) => ({ ...d, nome: e.target.value }))}
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
               placeholder="Ex: Loja da Marcela"
               className="w-full border border-black/15 dark:border-white/15 rounded-lg px-3 py-2 text-sm bg-transparent placeholder:text-black/30 dark:placeholder:text-white/30"
             />
@@ -56,17 +51,18 @@ export default function Configuracoes({ temaSegmento }: ConfiguracoesProps) {
           <div>
             <label className="text-sm font-medium block mb-1.5">CNPJ/CPF</label>
             <input
-              value={dados.cnpjCpf}
-              onChange={(e) => setDados((d) => ({ ...d, cnpjCpf: e.target.value }))}
+              value={cnpjCpf}
+              onChange={(e) => setCnpjCpf(e.target.value)}
               placeholder="000.000.000-00"
               className="w-full border border-black/15 dark:border-white/15 rounded-lg px-3 py-2 text-sm bg-transparent placeholder:text-black/30 dark:placeholder:text-white/30"
             />
           </div>
           <button
             type="submit"
-            className="rounded-lg bg-seg-primary text-white px-4 py-2 text-sm font-medium transition-transform active:scale-95"
+            disabled={salvando}
+            className="rounded-lg bg-seg-primary text-white px-4 py-2 text-sm font-medium transition-transform active:scale-95 disabled:opacity-50"
           >
-            Salvar
+            {salvando ? 'Salvando...' : 'Salvar'}
           </button>
         </form>
       </div>
@@ -74,14 +70,8 @@ export default function Configuracoes({ temaSegmento }: ConfiguracoesProps) {
       <div>
         <h2 className="font-semibold text-lg mb-3">Segmento do negócio</h2>
         <div className="rounded-xl border border-black/10 dark:border-white/10 p-4 flex items-center justify-between gap-3 flex-wrap">
-          <div>
-            <p className="text-sm font-medium">{segmentoAtual?.label ?? 'Nenhum segmento escolhido'}</p>
-            <p className="text-xs text-black/40 dark:text-white/40">Define o tema visual (cor + fonte) do painel</p>
-          </div>
-          <button
-            onClick={temaSegmento.restaurarTemaPadrao}
-            className="text-xs rounded-lg border border-black/15 dark:border-white/15 px-3 py-2 font-medium"
-          >
+          <p className="text-xs text-black/40 dark:text-white/40">Define o tema visual (cor + fonte) do painel</p>
+          <button onClick={onTrocarSegmento} className="text-xs rounded-lg border border-black/15 dark:border-white/15 px-3 py-2 font-medium min-h-[44px]">
             Trocar segmento
           </button>
         </div>
@@ -96,8 +86,8 @@ export default function Configuracoes({ temaSegmento }: ConfiguracoesProps) {
           </div>
         </div>
         <button
-          onClick={() => setToast({ mensagem: 'Convite de usuário ainda não implementado — depende de autenticação real.', tipo: 'neutro' })}
-          className="text-xs rounded-lg border border-black/15 dark:border-white/15 px-3 py-2 font-medium"
+          onClick={() => setToast({ mensagem: 'Convite de usuário ainda não implementado.', tipo: 'neutro' })}
+          className="text-xs rounded-lg border border-black/15 dark:border-white/15 px-3 py-2 font-medium min-h-[44px]"
         >
           + Convidar usuário
         </button>

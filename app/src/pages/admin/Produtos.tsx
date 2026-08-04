@@ -11,14 +11,14 @@ const POR_PAGINA = 20
 interface FormState {
   nome: string
   sku: string
-  categoria: string
+  categoriaId: string
   precoCusto: string
   precoVenda: string
   estoqueAtual: string
   estoqueMinimo: string
 }
 
-const FORM_VAZIO: FormState = { nome: '', sku: '', categoria: '', precoCusto: '', precoVenda: '', estoqueAtual: '', estoqueMinimo: '' }
+const FORM_VAZIO: FormState = { nome: '', sku: '', categoriaId: '', precoCusto: '', precoVenda: '', estoqueAtual: '', estoqueMinimo: '' }
 
 // Produtos (Capítulo 7.2 do PRD) — RF-PRD-01 (cadastrar) e RF-PRD-05
 // (editar/inativar) agora com formulário de verdade, seguindo os
@@ -26,6 +26,7 @@ const FORM_VAZIO: FormState = { nome: '', sku: '', categoria: '', precoCusto: ''
 export default function Produtos() {
   const produtos = useProdutos()
   const categorias = useCategorias()
+  const nomeCategoria = (id: string | null) => categorias.find((c) => c.id === id)?.nome ?? '—'
   const [pagina, setPagina] = useState(1)
   const [formAberto, setFormAberto] = useState(false)
   const [editandoId, setEditandoId] = useState<string | null>(null)
@@ -47,7 +48,7 @@ export default function Produtos() {
     setForm({
       nome: p.nome,
       sku: p.sku,
-      categoria: p.categoria,
+      categoriaId: p.categoriaId ?? '',
       precoCusto: String(p.precoCusto),
       precoVenda: String(p.precoVenda),
       estoqueAtual: String(p.estoqueAtual),
@@ -56,35 +57,43 @@ export default function Produtos() {
     setFormAberto(true)
   }
 
-  function salvar(e: React.FormEvent) {
+  async function salvar(e: React.FormEvent) {
     e.preventDefault()
     if (!form.nome.trim() || !form.sku.trim()) return
     const dados = {
       nome: form.nome.trim(),
       sku: form.sku.trim(),
-      categoria: form.categoria.trim() || 'Geral',
+      categoriaId: form.categoriaId || null,
       precoCusto: Number(form.precoCusto) || 0,
       precoVenda: Number(form.precoVenda) || 0,
       estoqueAtual: Math.max(Number(form.estoqueAtual) || 0, 0),
       estoqueMinimo: Math.max(Number(form.estoqueMinimo) || 0, 0),
       ativo: true,
     }
-    if (editandoId) {
-      editarProduto(editandoId, dados)
-      setToast({ mensagem: 'Produto atualizado.', tipo: 'sucesso' })
-    } else {
-      criarProduto(dados)
-      setToast({ mensagem: 'Produto cadastrado.', tipo: 'sucesso' })
+    try {
+      if (editandoId) {
+        await editarProduto(editandoId, dados)
+        setToast({ mensagem: 'Produto atualizado.', tipo: 'sucesso' })
+      } else {
+        await criarProduto(dados)
+        setToast({ mensagem: 'Produto cadastrado.', tipo: 'sucesso' })
+      }
+      setFormAberto(false)
+      setForm(FORM_VAZIO)
+    } catch (err) {
+      setToast({ mensagem: err instanceof Error ? err.message : 'Erro ao salvar produto.', tipo: 'erro' })
     }
-    setFormAberto(false)
-    setForm(FORM_VAZIO)
   }
 
-  function alternarAtivo(p: Produto) {
+  async function alternarAtivo(p: Produto) {
     const novoAtivo = !p.ativo
     if (!confirm(novoAtivo ? 'Reativar este produto?' : 'Inativar este produto? Ele some das telas de venda, mas o histórico é preservado.')) return
-    alternarAtivoProduto(p.id, novoAtivo)
-    setToast({ mensagem: novoAtivo ? 'Produto reativado.' : 'Produto inativado.', tipo: 'neutro' })
+    try {
+      await alternarAtivoProduto(p.id, novoAtivo)
+      setToast({ mensagem: novoAtivo ? 'Produto reativado.' : 'Produto inativado.', tipo: 'neutro' })
+    } catch (err) {
+      setToast({ mensagem: err instanceof Error ? err.message : 'Erro ao atualizar produto.', tipo: 'erro' })
+    }
   }
 
   return (
@@ -127,13 +136,13 @@ export default function Produtos() {
             <div>
               <label className="text-xs font-medium block mb-1">Categoria</label>
               <select
-                value={form.categoria}
-                onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))}
+                value={form.categoriaId}
+                onChange={(e) => setForm((f) => ({ ...f, categoriaId: e.target.value }))}
                 className="w-full border border-black/15 dark:border-white/15 rounded-lg px-3 py-2 text-sm bg-transparent"
               >
                 <option value="">Selecione</option>
                 {categorias.map((c) => (
-                  <option key={c.id} value={c.nome}>
+                  <option key={c.id} value={c.id}>
                     {c.nome}
                   </option>
                 ))}
@@ -218,7 +227,7 @@ export default function Produtos() {
                       {!p.ativo && <span className="ml-2 text-[10px] uppercase tracking-wide text-black/40 dark:text-white/40">Inativo</span>}
                     </td>
                     <td className="px-3 py-2.5 text-black/50 dark:text-white/50">{p.sku}</td>
-                    <td className="px-3 py-2.5 text-black/50 dark:text-white/50">{p.categoria}</td>
+                    <td className="px-3 py-2.5 text-black/50 dark:text-white/50">{nomeCategoria(p.categoriaId)}</td>
                     <td className="px-3 py-2.5 text-right font-[var(--font-mono-fin)]">{formatarReais(p.precoCusto)}</td>
                     <td className="px-3 py-2.5 text-right font-[var(--font-mono-fin)]">{formatarReais(p.precoVenda)}</td>
                     <td

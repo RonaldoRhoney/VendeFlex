@@ -2,7 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import Breadcrumb from '../../components/Breadcrumb'
 import ThemeToggle from '../../components/ThemeToggle'
-import { CHAVE_SESSAO, MODULOS_NAV, MODULOS_TAB_BAR_MOBILE } from '../../lib/constants'
+import { signOut } from '../../lib/auth'
+import { MODULOS_NAV, MODULOS_TAB_BAR_MOBILE } from '../../lib/constants'
 
 interface AdminShellProps {
   moduloAtivo: string
@@ -18,11 +19,10 @@ interface AdminShellProps {
 export default function AdminShell({ moduloAtivo, onSelectModulo, children }: AdminShellProps) {
   const [maisAberto, setMaisAberto] = useState(false)
 
-  function sair() {
-    localStorage.removeItem(CHAVE_SESSAO)
+  async function sair() {
+    await signOut()
     // navigate('/admin') não remontaria Painel.tsx (mesma rota já ativa) —
-    // o estado `logado` em memória continuaria true mesmo com a chave já
-    // removida do localStorage. Reload força Painel a reler do zero.
+    // reload força tudo a ser relido do zero (sessão, tenant, etc.).
     window.location.href = '/admin'
   }
 

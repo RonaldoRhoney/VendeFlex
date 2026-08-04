@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useProdutos } from '../../lib/produtosStore'
-import { registrarMovimentoEstoque } from '../../lib/estoqueStore'
 import { formatarReais } from '../../lib/format'
 import { registrarVenda } from '../../lib/vendasStore'
 import type { FormaPagamento, ItemCarrinho, Produto } from '../../lib/types'
@@ -66,15 +65,23 @@ export default function PDV() {
   const descontoAplicado = Math.min(Math.max(Number(desconto) || 0, 0), subtotal)
   const total = subtotal - descontoAplicado
 
-  function finalizarVenda() {
-    registrarVenda(carrinho, total, formaPagamento)
-    // RF-EST-04: decremento automático de estoque ao confirmar a venda.
-    for (const item of carrinho) {
-      registrarMovimentoEstoque(item.produto.id, 'saida', item.quantidade, 'Venda PDV')
+  const [finalizando, setFinalizando] = useState(false)
+
+  async function finalizarVenda() {
+    setFinalizando(true)
+    try {
+      // RF-EST-04: preço, estoque suficiente e teto de desconto são
+      // validados dentro da RPC (registrar_venda) — o servidor é a fonte
+      // de verdade, não o `total` calculado aqui no client.
+      await registrarVenda(carrinho, formaPagamento, descontoAplicado)
+      setCarrinho([])
+      setDesconto('')
+      setToast({ mensagem: `Venda de ${formatarReais(total)} registrada.`, tipo: 'sucesso' })
+    } catch (err) {
+      setToast({ mensagem: err instanceof Error ? err.message : 'Erro ao registrar venda.', tipo: 'erro' })
+    } finally {
+      setFinalizando(false)
     }
-    setCarrinho([])
-    setDesconto('')
-    setToast({ mensagem: `Venda de ${formatarReais(total)} registrada.`, tipo: 'sucesso' })
   }
 
   return (
@@ -176,11 +183,11 @@ export default function PDV() {
             <span className="font-semibold font-[var(--font-mono-fin)]">{formatarReais(total)}</span>
           </div>
           <button
-            disabled={carrinho.length === 0}
+            disabled={carrinho.length === 0 || finalizando}
             onClick={finalizarVenda}
             className="w-full rounded-lg bg-seg-primary text-white py-3 text-sm font-medium transition-transform active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
           >
-            Finalizar Venda
+            {finalizando ? 'Registrando...' : 'Finalizar Venda'}
           </button>
         </div>
       </div>

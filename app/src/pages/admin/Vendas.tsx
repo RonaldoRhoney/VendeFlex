@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { cancelarVenda, useVendas } from '../../lib/vendasStore'
-import { registrarMovimentoEstoque } from '../../lib/estoqueStore'
 import { formatarReais } from '../../lib/format'
 import EmptyState from '../../components/EmptyState'
 import Toast, { type ToastData } from '../../components/admin/Toast'
@@ -20,13 +19,16 @@ export default function Vendas() {
   const vendas = useVendas()
   const [toast, setToast] = useState<ToastData | null>(null)
 
-  function cancelar(venda: VendaRegistrada) {
+  async function cancelar(venda: VendaRegistrada) {
     if (!confirm('Cancelar esta venda? O estoque dos itens será estornado.')) return
-    for (const item of venda.itens) {
-      registrarMovimentoEstoque(item.produto.id, 'entrada', item.quantidade, 'Estorno — venda cancelada')
+    try {
+      // Estorno de estoque acontece dentro da RPC (cancelar_venda), numa
+      // única transação — o frontend não orquestra mais os itens um a um.
+      await cancelarVenda(venda.id)
+      setToast({ mensagem: 'Venda cancelada e estoque estornado.', tipo: 'neutro' })
+    } catch (err) {
+      setToast({ mensagem: err instanceof Error ? err.message : 'Erro ao cancelar venda.', tipo: 'erro' })
     }
-    cancelarVenda(venda.id)
-    setToast({ mensagem: 'Venda cancelada e estoque estornado.', tipo: 'neutro' })
   }
 
   if (vendas.length === 0) {

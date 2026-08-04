@@ -42,19 +42,27 @@ export default function Compras() {
     setQuantidade('')
   }
 
-  function criarPedido() {
+  async function criarPedido() {
     const fornecedor = fornecedores.find((f) => f.id === fornecedorId)
     if (!fornecedor || itens.length === 0) return
-    criarCompra(fornecedor, itens)
-    setFornecedorId('')
-    setItens([])
-    setFormAberto(false)
-    setToast({ mensagem: 'Pedido de compra criado.', tipo: 'sucesso' })
+    try {
+      await criarCompra(fornecedor, itens)
+      setFornecedorId('')
+      setItens([])
+      setFormAberto(false)
+      setToast({ mensagem: 'Pedido de compra criado.', tipo: 'sucesso' })
+    } catch (err) {
+      setToast({ mensagem: err instanceof Error ? err.message : 'Erro ao criar pedido.', tipo: 'erro' })
+    }
   }
 
-  function avancar(id: string) {
-    avancarStatusCompra(id)
-    setToast({ mensagem: 'Status do pedido atualizado.', tipo: 'sucesso' })
+  async function avancar(id: string) {
+    try {
+      await avancarStatusCompra(id)
+      setToast({ mensagem: 'Status do pedido atualizado.', tipo: 'sucesso' })
+    } catch (err) {
+      setToast({ mensagem: err instanceof Error ? err.message : 'Erro ao atualizar pedido.', tipo: 'erro' })
+    }
   }
 
   return (

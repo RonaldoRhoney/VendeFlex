@@ -1,31 +1,61 @@
-import { createLocalStore } from './localStore'
-import { MOVIMENTOS_ESTOQUE_MOCK } from './mockData'
-import { buscarProdutoPorId, editarProduto } from './produtosStore'
-import type { MovimentoEstoque, TipoMovimentoEstoque } from './types'
+import { useTenantRows } from './supabaseStore'
+import type { MovimentoEstoque, Produto, TipoMovimentoEstoque } from './types'
 
-const store = createLocalStore<MovimentoEstoque>('vendeflex.movimentos_estoque', MOVIMENTOS_ESTOQUE_MOCK)
+interface LinhaProdutoEmbed {
+  id: string
+  nome: string
+  sku: string
+  categoria_id: string | null
+  preco_custo: number
+  preco_venda: number
+  estoque_atual: number
+  estoque_minimo: number
+  ativo: boolean
+}
+interface LinhaMovimento {
+  id: string
+  tipo: TipoMovimentoEstoque
+  quantidade: number
+  motivo: string | null
+  criado_em: string
+  produto: LinhaProdutoEmbed
+}
 
-export const useMovimentosEstoque = store.useStore
-
-// Único ponto de entrada pra mudar estoque de um produto — chamado pelo PDV
-// (venda), Compras (recebimento) e Vendas (estorno de cancelamento), sempre
-// deixando um registro no log (RF-EST-01) e nunca deixando o saldo ir
-// abaixo de zero.
-export function registrarMovimentoEstoque(produtoId: string, tipo: TipoMovimentoEstoque, quantidade: number, motivo: string) {
-  const produto = buscarProdutoPorId(produtoId)
-  if (!produto) return
-
-  const delta = tipo === 'entrada' ? Math.abs(quantidade) : tipo === 'saida' || tipo === 'perda' ? -Math.abs(quantidade) : quantidade
-  const novoEstoque = Math.max(produto.estoqueAtual + delta, 0)
-  editarProduto(produtoId, { estoqueAtual: novoEstoque })
-
-  const movimento: MovimentoEstoque = {
-    id: `mov-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    produto: { ...produto, estoqueAtual: novoEstoque },
-    tipo,
-    quantidade: delta,
-    motivo,
-    data: new Date().toISOString(),
+function paraProduto(l: LinhaProdutoEmbed): Produto {
+  return {
+    id: l.id,
+    nome: l.nome,
+    sku: l.sku,
+    categoriaId: l.categoria_id,
+    precoCusto: l.preco_custo,
+    precoVenda: l.preco_venda,
+    estoqueAtual: l.estoque_atual,
+    estoqueMinimo: l.estoque_minimo,
+    ativo: l.ativo,
   }
-  store.salvar([movimento, ...store.ler()])
+}
+
+function paraMovimento(l: LinhaMovimento): MovimentoEstoque {
+  return {
+    id: l.id,
+    produto: paraProduto(l.produto),
+    tipo: l.tipo,
+    quantidade: l.quantidade,
+    motivo: l.motivo ?? '',
+    data: l.criado_em,
+  }
+}
+
+const SELECT = `
+  id, tipo, quantidade, motivo, criado_em,
+  produto:produtos(id, nome, sku, categoria_id, preco_custo, preco_venda, estoque_atual, estoque_minimo, ativo)
+`
+
+// Só leitura agora — o log de estoque_movimentos é escrito exclusivamente
+// pelas RPCs (registrar_venda, avancar_status_compra, cancelar_venda) no
+// servidor. Não existe hoje tela de ajuste manual em Estoque.tsx (só lista
+// estoque baixo + histórico), então a RPC ajustar_estoque_manual fica sem
+// chamador no frontend por enquanto — pendência documentada, não bug.
+export function useMovimentosEstoque(): MovimentoEstoque[] {
+  return useTenantRows<LinhaMovimento>('estoque_movimentos', SELECT, { coluna: 'criado_em', ascendente: false }).map(paraMovimento)
 }

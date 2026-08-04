@@ -15,23 +15,31 @@ export default function Fornecedores() {
   const [formAberto, setFormAberto] = useState(false)
   const [toast, setToast] = useState<ToastData | null>(null)
 
-  function salvar(e: React.FormEvent) {
+  async function salvar(e: React.FormEvent) {
     e.preventDefault()
     if (!form.nome.trim()) return
-    criarFornecedor({
-      nome: form.nome.trim(),
-      contato: form.contato.trim(),
-      condicoesPagamento: form.condicoesPagamento.trim() || 'A combinar',
-    })
-    setForm(FORM_VAZIO)
-    setFormAberto(false)
-    setToast({ mensagem: 'Fornecedor cadastrado.', tipo: 'sucesso' })
+    try {
+      await criarFornecedor({
+        nome: form.nome.trim(),
+        contato: form.contato.trim(),
+        condicoesPagamento: form.condicoesPagamento.trim() || 'A combinar',
+      })
+      setForm(FORM_VAZIO)
+      setFormAberto(false)
+      setToast({ mensagem: 'Fornecedor cadastrado.', tipo: 'sucesso' })
+    } catch (err) {
+      setToast({ mensagem: err instanceof Error ? err.message : 'Erro ao cadastrar fornecedor.', tipo: 'erro' })
+    }
   }
 
-  function apagar(id: string) {
+  async function apagar(id: string) {
     if (!confirm('Excluir este fornecedor?')) return
-    excluirFornecedor(id)
-    setToast({ mensagem: 'Fornecedor excluído.', tipo: 'neutro' })
+    try {
+      await excluirFornecedor(id)
+      setToast({ mensagem: 'Fornecedor excluído.', tipo: 'neutro' })
+    } catch (err) {
+      setToast({ mensagem: err instanceof Error ? err.message : 'Erro ao excluir fornecedor.', tipo: 'erro' })
+    }
   }
 
   return (

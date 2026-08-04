@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { calcularRanking, vendasNoPeriodo } from '../../lib/analytics'
 import { useVendas } from '../../lib/vendasStore'
 import { useProdutos } from '../../lib/produtosStore'
+import { useCategorias } from '../../lib/categoriasStore'
 import { formatarReais } from '../../lib/format'
 import EmptyState from '../../components/EmptyState'
 import type { PeriodoDashboard } from '../../lib/types'
@@ -23,13 +24,15 @@ export default function Relatorios() {
   const [periodo, setPeriodo] = useState<PeriodoDashboard>('mes')
   const vendas = useVendas().filter((v) => !v.cancelada)
   const produtos = useProdutos()
+  const categorias = useCategorias()
   const vendasDoPeriodo = vendasNoPeriodo(vendas, periodo)
   const ranking = calcularRanking(vendasDoPeriodo)
 
-  const porCategoria = Array.from(new Set(produtos.map((p) => p.categoria))).map((categoria) => {
-    const itensDaCategoria = produtos.filter((p) => p.categoria === categoria)
+  const porCategoria = Array.from(new Set(produtos.map((p) => p.categoriaId))).map((categoriaId) => {
+    const itensDaCategoria = produtos.filter((p) => p.categoriaId === categoriaId)
     const valorEstoque = itensDaCategoria.reduce((s, p) => s + p.estoqueAtual * p.precoVenda, 0)
-    return { categoria, quantidadeProdutos: itensDaCategoria.length, valorEstoque }
+    const nome = categorias.find((c) => c.id === categoriaId)?.nome ?? 'Sem categoria'
+    return { categoriaId, nome, quantidadeProdutos: itensDaCategoria.length, valorEstoque }
   })
 
   return (
@@ -82,8 +85,8 @@ export default function Relatorios() {
             </thead>
             <tbody>
               {porCategoria.map((c) => (
-                <tr key={c.categoria} className="border-b border-black/5 dark:border-white/5 last:border-0">
-                  <td className="px-3 py-2.5">{c.categoria}</td>
+                <tr key={c.categoriaId ?? 'sem-categoria'} className="border-b border-black/5 dark:border-white/5 last:border-0">
+                  <td className="px-3 py-2.5">{c.nome}</td>
                   <td className="px-3 py-2.5 text-right font-[var(--font-mono-fin)] tabular-nums">{c.quantidadeProdutos}</td>
                   <td className="px-3 py-2.5 text-right font-[var(--font-mono-fin)] tabular-nums">{formatarReais(c.valorEstoque)}</td>
                 </tr>

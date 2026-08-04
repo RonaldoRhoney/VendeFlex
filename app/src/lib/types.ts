@@ -6,7 +6,7 @@ export interface Produto {
   id: string
   nome: string
   sku: string
-  categoria: string
+  categoriaId: string | null
   precoCusto: number
   precoVenda: number
   estoqueAtual: number
@@ -103,11 +103,21 @@ export type StatusCaixa = 'aberto' | 'fechado'
 
 export interface TurnoCaixa {
   id: string
-  operador: string
+  operadorId: string
   valorAbertura: number
   valorFechamento: number | null
+  diferenca: number | null
   status: StatusCaixa
   abertoEm: string
+}
+
+export interface MovimentoCaixa {
+  id: string
+  turnoId: string
+  tipo: 'sangria' | 'suprimento'
+  valor: number
+  descricao: string | null
+  criadoEm: string
 }
 
 // ---------- Financeiro (Cap. 7.9) ----------
