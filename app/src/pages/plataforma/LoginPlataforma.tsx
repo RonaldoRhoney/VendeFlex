@@ -1,20 +1,28 @@
 import { useState } from 'react'
-
-interface LoginPlataformaProps {
-  onEntrar: () => void
-}
+import { signInWithGoogle, signInWithPassword } from '../../lib/auth'
 
 // Painel Administrativo RhoneyInc (Cap. 19 do PRD) — "nunca é acessível a
 // tenants comuns, é restrito a usuários com papel administrativo interno
-// (is_admin())". Nesta fase, só visual — quando o backend estiver ligado,
-// vira uma checagem real de profiles.is_platform_admin (migration 0001).
-export default function LoginPlataforma({ onEntrar }: LoginPlataformaProps) {
+// (is_admin())". Login real via Supabase Auth — PainelPlataforma.tsx checa
+// profiles.is_platform_admin depois da sessão abrir (nunca confia só em
+// "logou", precisa ser platform admin de verdade).
+export default function LoginPlataforma() {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
+  const [erro, setErro] = useState<string | null>(null)
+  const [enviando, setEnviando] = useState(false)
 
-  function entrar(e: React.FormEvent) {
+  async function entrar(e: React.FormEvent) {
     e.preventDefault()
-    onEntrar()
+    setErro(null)
+    setEnviando(true)
+    try {
+      await signInWithPassword(email, senha)
+    } catch {
+      setErro('E-mail ou senha incorretos.')
+    } finally {
+      setEnviando(false)
+    }
   }
 
   return (
@@ -48,11 +56,20 @@ export default function LoginPlataforma({ onEntrar }: LoginPlataformaProps) {
               className="w-full border border-white/15 bg-transparent rounded-lg px-3 py-2.5 text-sm placeholder:text-white/30"
             />
           </div>
+          {erro && <p className="text-xs text-red-400">{erro}</p>}
           <button
             type="submit"
-            className="w-full rounded-lg bg-brand text-white py-2.5 text-sm font-medium transition-transform active:scale-95 hover:bg-brand-dark"
+            disabled={enviando}
+            className="w-full rounded-lg bg-brand text-white py-2.5 text-sm font-medium transition-transform active:scale-95 hover:bg-brand-dark disabled:opacity-40"
           >
-            Entrar
+            {enviando ? 'Entrando...' : 'Entrar'}
+          </button>
+          <button
+            type="button"
+            onClick={() => signInWithGoogle()}
+            className="w-full rounded-lg border border-white/15 py-2.5 text-sm font-medium hover:bg-white/5"
+          >
+            Entrar com Google
           </button>
         </div>
       </form>

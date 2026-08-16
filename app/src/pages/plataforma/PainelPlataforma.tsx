@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import LoginPlataforma from './LoginPlataforma'
 import Empresas from './Empresas'
 import EmConstrucaoPlataforma from './EmConstrucaoPlataforma'
-
-const CHAVE_SESSAO = 'vendeflex.plataforma.sessao'
+import { useSession, signOut } from '../../lib/auth'
+import { DB_READY, supabase } from '../../lib/supabaseClient'
 
 // Áreas do Cap. 19.2 do PRD — só "empresas" é MVP (RF-ADM-01), o resto é
 // V2/V3 (aparece na nav pra deixar a estrutura completa visível, mas cai
@@ -28,21 +28,57 @@ const AREAS = [
 // painel do lojista).
 export default function PainelPlataforma() {
   const navigate = useNavigate()
-  const [logado, setLogado] = useState(() => localStorage.getItem(CHAVE_SESSAO) === '1')
+  const { session, loading: carregandoSessao } = useSession()
+  const [ehPlatformAdmin, setEhPlatformAdmin] = useState<boolean | null>(null)
   const [areaAtiva, setAreaAtiva] = useState('empresas')
 
-  function entrar() {
-    localStorage.setItem(CHAVE_SESSAO, '1')
-    setLogado(true)
-  }
+  // Sessão real do Supabase Auth + checagem de profiles.is_platform_admin —
+  // antes disso era só uma flag em localStorage que qualquer pessoa podia
+  // setar no console pra "logar" (achado da auditoria de segurança
+  // 2026-08-15). is_platform_admin é protegido por GRANT de coluna (só o
+  // próprio usuário edita "email", o resto é read-only pro client — ver
+  // migration 0001), então essa checagem não pode ser forjada pelo client.
+  useEffect(() => {
+    if (!DB_READY || !supabase) {
+      setEhPlatformAdmin(false)
+      return
+    }
+    if (!session) {
+      setEhPlatformAdmin(false)
+      return
+    }
+    supabase
+      .from('profiles')
+      .select('is_platform_admin')
+      .eq('id', session.user.id)
+      .maybeSingle()
+      .then(({ data }) => setEhPlatformAdmin(data?.is_platform_admin ?? false))
+  }, [session])
 
-  function sair() {
-    localStorage.removeItem(CHAVE_SESSAO)
+  async function sair() {
+    await signOut()
     window.location.href = '/rhoneyinc-admin'
   }
 
-  if (!logado) {
-    return <LoginPlataforma onEntrar={entrar} />
+  if (carregandoSessao || (session && ehPlatformAdmin === null)) {
+    return <div className="min-h-dvh grid place-items-center bg-bg-dark text-text-dark text-sm text-white/40">Carregando...</div>
+  }
+
+  if (!session) {
+    return <LoginPlataforma />
+  }
+
+  if (!ehPlatformAdmin) {
+    return (
+      <div className="min-h-dvh grid place-items-center bg-bg-dark text-text-dark px-4">
+        <div className="text-center">
+          <p className="text-sm text-white/70 mb-3">Essa conta não tem acesso ao Painel Administrativo.</p>
+          <button onClick={sair} className="text-sm text-brand hover:underline">
+            Sair e tentar outra conta
+          </button>
+        </div>
+      </div>
+    )
   }
 
   const area = AREAS.find((a) => a.id === areaAtiva)
